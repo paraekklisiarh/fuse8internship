@@ -80,15 +80,15 @@ public struct BankOperation : ITotalAmount
 
 	public long Rubles { get; set; }
 
-	public short Kopeks { get; set; }
+	public short Kopecks { get; set; }
 
 	public long RublesBeforeOperation { get; set; }
 
-	public short KopeksBeforeOperation { get; set; }
+	public short KopecksBeforeOperation { get; set; }
 
 	public long RublesAfterOperation { get; set; }
 
-	public short KopeksAfterOperation { get; set; }
+	public short KopecksAfterOperation { get; set; }
 
 	public long OperationInfo0 { get; set; }
 	public long OperationInfo1 { get; set; }

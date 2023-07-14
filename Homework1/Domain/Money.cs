@@ -5,16 +5,16 @@
 /// </summary>
 public class Money
 {
-	public Money(int rubles, int kopeks)
-		: this(false, rubles, kopeks)
+	public Money(int rubles, int kopecks)
+		: this(false, rubles, kopecks)
 	{
 	}
 
-	public Money(bool isNegative, int rubles, int kopeks)
+	public Money(bool isNegative, int rubles, int kopecks)
 	{
 		IsNegative = isNegative;
 		Rubles = rubles;
-		Kopeks = kopeks;
+		Kopecks = kopecks;
 	}
 
 	/// <summary>
@@ -30,5 +30,5 @@ public class Money
 	/// <summary>
 	/// Количество копеек
 	/// </summary>
-	public int Kopeks { get; }
+	public int Kopecks { get; }
 }

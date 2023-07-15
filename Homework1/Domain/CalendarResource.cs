@@ -34,7 +34,8 @@ public class CalendarResource
 	private static string GetMonthByNumber(int number)
 		=> MonthNames[number];
 
-	// ToDo реализовать индексатор для получения названия месяца по енаму Month
+	// Индексатор для получения названия месяца по перечислению Month
+	public string this[Month index] => GetMonthByNumber((int)index);
 }
 
 public enum Month

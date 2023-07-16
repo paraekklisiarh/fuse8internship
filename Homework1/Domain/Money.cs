@@ -23,7 +23,7 @@ public class Money
     {
         if (kopecks is < 0 or > 99
             || rubles < 0
-            || isNegative && rubles == 0 && kopecks == 0)
+            || (isNegative && rubles == 0 && kopecks == 0))
             throw new ArgumentException();
 
         IsNegative = isNegative;
@@ -61,7 +61,7 @@ public class Money
             // m1 + (-m2) == m1 - |m2|
             false when money2.IsNegative => money1 - -money2,
             // m1 + m2 && -m1 + -m2
-            _ => PositiveOrTwoNegativeAddition(money1, money2)
+            _ => ModularAddition(money1, money2)
         };
     }
 
@@ -71,21 +71,20 @@ public class Money
     /// <param name="money1"></param>
     /// <param name="money2"></param>
     /// <returns>Объект Money - сумма обоих объектов</returns>
-    private static Money PositiveOrTwoNegativeAddition(Money money1, Money money2)
+    private static Money ModularAddition(Money money1, Money money2)
     {
         // Я предполагаю, что хранить int дешевле, чем дважды вычислять сумму копеек в return.
         // Как минимум, это красивее!
         int kopecks = money1.Kopecks + money2.Kopecks;
 
         return new Money(
-            isNegative: money1.IsNegative,
-            rubles: money1.Rubles + money2.Rubles + kopecks / 100,
-            kopecks: kopecks % 100);
+            money1.Rubles + money2.Rubles + kopecks / 100,
+            kopecks % 100);
     }
 
     public static Money operator -(Money money)
     {
-        return new Money(isNegative: !money.IsNegative, rubles: money.Rubles, kopecks: money.Kopecks);
+        return new Money(!money.IsNegative, money.Rubles, money.Kopecks);
     }
 
     /// <summary>
@@ -96,22 +95,15 @@ public class Money
     /// <returns>Объект Money - разность обоих объектов.</returns>
     public static Money operator -(Money money1, Money money2)
     {
-        if (money1 == money2)
-        {
-            return Money.Zero();
-        }
+        if (money1 == money2) return Zero();
 
-        if (money2 == Money.Zero())
-        {
-            return money1;
-        }
+        if (money2 == Zero()) return money1;
 
         switch (money1.IsNegative)
         {
             case true when !money2.IsNegative:
                 // -m1 - m2 = -|m1 + m2|
-                // Знак результата = знак money1.
-                return PositiveOrTwoNegativeAddition(money1, money2);
+                return -ModularAddition(money1, money2);
             case false when money2.IsNegative:
                 // m1 - -m2 = m1+m2
                 return money1 + -money2;
@@ -121,38 +113,34 @@ public class Money
         {
             // -m1 - -m2 
             if (money1 > money2)
-            {
                 //= -|money1 - money2|
                 return -(-money1 - -money2);
-            }
             else
-            {
                 // = -|money2 - money1|
                 return -money2 - -money1;
-            }
         }
 
         // !money1.isNegative && !money2.isNegative
         if (money1 >= money2)
         {
             // money1 - money2
-            var resultKopecks = (money1.Rubles * 100 + money1.Kopecks) - (money2.Rubles * 100 + money2.Kopecks);
+            int resultKopecks = money1.Rubles * 100 + money1.Kopecks - (money2.Rubles * 100 + money2.Kopecks);
 
             return new Money(
-                isNegative: false,
-                rubles: resultKopecks / 100,
-                kopecks: resultKopecks % 100
+                false,
+                resultKopecks / 100,
+                resultKopecks % 100
             );
         }
         else
         {
             // -|money2 - money1|
-            var resultKopecks = (money2.Rubles * 100 + money2.Kopecks) - (money1.Rubles * 100 + money1.Kopecks);
+            int resultKopecks = money2.Rubles * 100 + money2.Kopecks - (money1.Rubles * 100 + money1.Kopecks);
 
             return new Money(
-                isNegative: true,
-                rubles: resultKopecks / 100,
-                kopecks: resultKopecks % 100
+                true,
+                resultKopecks / 100,
+                resultKopecks % 100
             );
         }
     }
@@ -181,7 +169,10 @@ public class Money
         };
     }
 
-    public static bool operator >=(Money money1, Money money2) => money1 > money2 || money1 == money2;
+    public static bool operator >=(Money money1, Money money2)
+    {
+        return money1 > money2 || money1 == money2;
+    }
 
     public static bool operator <(Money money1, Money money2)
     {
@@ -200,7 +191,10 @@ public class Money
         };
     }
 
-    public static bool operator <=(Money money1, Money money2) => money1 < money2 || money1.Equals(money2);
+    public static bool operator <=(Money money1, Money money2)
+    {
+        return money1 < money2 || money1.Equals(money2);
+    }
 
     /// <summary>
     /// Определяет, равен ли указанный объект текущему объекту Money.
@@ -209,7 +203,7 @@ public class Money
     /// <returns>true, если объекты считаются равными; в противном случае - false.</returns>
     public override bool Equals(object? obj)
     {
-        return obj != null && ReferenceEquals(this, obj) || Equals((obj as Money)!);
+        return (obj != null && ReferenceEquals(this, obj)) || Equals((obj as Money)!);
     }
 
     /// <summary>
@@ -220,9 +214,9 @@ public class Money
     public bool Equals(Money other)
     {
         return ReferenceEquals(this, other) ||
-               IsNegative == other.IsNegative &&
-               Kopecks == other.Kopecks &&
-               Rubles == other.Rubles;
+               (IsNegative == other.IsNegative &&
+                Kopecks == other.Kopecks &&
+                Rubles == other.Rubles);
     }
 
     /// <summary>
@@ -235,14 +229,20 @@ public class Money
     {
         // Наверное, сравнить два bool будет менее затратно, можно было бы поменять местами с RefecenceEquals...
         return ReferenceEquals(money1, money2) ||
-               money1.IsNegative == money2.IsNegative &&
-               money1.Kopecks == money2.Kopecks &&
-               money1.Rubles == money2.Rubles;
+               (money1.IsNegative == money2.IsNegative &&
+                money1.Kopecks == money2.Kopecks &&
+                money1.Rubles == money2.Rubles);
     }
 
-    public static bool operator ==(Money money1, Money money2) => Equals(money1, money2);
+    public static bool operator ==(Money money1, Money money2)
+    {
+        return Equals(money1, money2);
+    }
 
-    public static bool operator !=(Money money1, Money money2) => !(money1 == money2);
+    public static bool operator !=(Money money1, Money money2)
+    {
+        return !(money1 == money2);
+    }
 
     /// <summary>
     /// Трансформирует объект Money в строку

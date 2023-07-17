@@ -26,7 +26,7 @@ public class StringInternBenchmark
     [Benchmark(Baseline = true, Description = "IsExist with Equals")]
     [ArgumentsSource(nameof(SampleData))]
     public bool WordIsExists(string word)
-    {
+        => _words.Any(item => word.Equals(item, StringComparison.Ordinal));
 
     [Benchmark(Description = "IsExist with Intern")]
     [ArgumentsSource(nameof(SampleData))]

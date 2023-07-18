@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 
 namespace Fuse8_ByteMinds.SummerSchool.Domain;
 
@@ -12,7 +12,7 @@ public static class DomainExtensions
     /// <returns>true, если переданная коллекция равна null или не содержит элементов</returns>
     public static bool IsNullOrEmpty<T>(this IEnumerable<T>? enumerable)
     {
-        return enumerable == null || enumerable.Any();
+        return enumerable == null || !enumerable.Any();
     }
 
     //Метод JoinToString от IEnumerable<T>.

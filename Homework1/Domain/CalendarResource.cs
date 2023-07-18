@@ -1,19 +1,20 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.Domain;
+namespace Fuse8_ByteMinds.SummerSchool.Domain;
 
 /// <summary>
 /// Значения ресурсов для календаря
 /// </summary>
 public class CalendarResource
 {
-	public static readonly CalendarResource Instance = new();
+	public static readonly CalendarResource Instance;
 
-	public static readonly string January = GetMonthByNumber(0);
-	public static readonly string February = GetMonthByNumber(1);
+	public static readonly string January;
+	public static readonly string February;
 
 	private static readonly string[] MonthNames;
 
 	static CalendarResource()
 	{
+		Instance = new CalendarResource();
 		MonthNames = new[]
 		{
 			"Январь",
@@ -29,10 +30,19 @@ public class CalendarResource
 			"Ноябрь",
 			"Декабрь",
 		};
+		February = GetMonthByNumber(1);
+		January = GetMonthByNumber(0);
 	}
 
 	private static string GetMonthByNumber(int number)
-		=> MonthNames[number];
+	{
+		if (number < 0 || number > MonthNames.Length)
+		{
+			throw new ArgumentOutOfRangeException();
+		}
+
+		return MonthNames[number];
+	}
 
 	// Индексатор для получения названия месяца по перечислению Month
 	public string this[Month index] => GetMonthByNumber((int)index);

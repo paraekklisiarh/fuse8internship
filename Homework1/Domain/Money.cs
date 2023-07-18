@@ -1,4 +1,4 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.Domain;
+namespace Fuse8_ByteMinds.SummerSchool.Domain;
 
 // Проблемы подхода:
 // 1) Следует использовать не int, а short или любой другой только положительный тип.
@@ -61,6 +61,7 @@ public class Money
             // m1 + (-m2) == m1 - |m2|
             false when money2.IsNegative => money1 - -money2,
             // m1 + m2 && -m1 + -m2
+            true when money2.IsNegative => -ModularAddition(money1, money2),
             _ => ModularAddition(money1, money2)
         };
     }

@@ -21,10 +21,20 @@ public class Money
 
     public Money(bool isNegative, int rubles, int kopecks)
     {
-        if (kopecks is < 0 or > 99
-            || rubles < 0
-            || (isNegative && rubles == 0 && kopecks == 0))
-            throw new ArgumentException();
+        if (kopecks is < 0 or > 99)
+        {
+            throw new ArgumentException("Количество копеек не может быть отрицательным и превышать 99");
+        }
+
+        if (rubles < 0)
+        {
+            throw new ArgumentException("Количество рублей не может быть отрицательным.");
+        }
+
+        if (isNegative && rubles == 0 && kopecks == 0)
+        {
+            throw new ArgumentException("Нулевое количество денег не может быть отрицательным.");
+        }
 
         IsNegative = isNegative;
         Rubles = rubles;
@@ -214,10 +224,10 @@ public class Money
     /// <returns>true, если объекты считаются равными; в противном случае - false.</returns>
     public bool Equals(Money other)
     {
-        return ReferenceEquals(this, other) ||
-               (IsNegative == other.IsNegative &&
-                Kopecks == other.Kopecks &&
-                Rubles == other.Rubles);
+        return !ReferenceEquals(other, null) && (ReferenceEquals(this, other) ||
+                                 (IsNegative == other.IsNegative &&
+                                  Kopecks == other.Kopecks &&
+                                  Rubles == other.Rubles));
     }
 
     /// <summary>
@@ -228,7 +238,6 @@ public class Money
     /// <returns>true, если объекты считаются равными; в противном случае - false.</returns>
     public static bool Equals(Money money1, Money money2)
     {
-        // Наверное, сравнить два bool будет менее затратно, можно было бы поменять местами с RefecenceEquals...
         return ReferenceEquals(money1, money2) ||
                (money1.IsNegative == money2.IsNegative &&
                 money1.Kopecks == money2.Kopecks &&

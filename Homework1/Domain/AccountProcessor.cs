@@ -5,57 +5,80 @@ public class AccountProcessor
     // Реализовать без копирования и боксинга
     public decimal CalculatePerformed<T>(in T bankAccount) where T: IBankAccount
     {
-	    return CalculateOperationPerformed(bankAccount.LastOperation) +
-	           CalculateOperationPerformed(bankAccount.PreviousOperation) +
-	           CalculateOperation1Performed(bankAccount.LastOperation) +
-	           CalculateOperation1Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation2Performed(bankAccount.LastOperation) +
-	           CalculateOperation2Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation3Performed(bankAccount.LastOperation) +
-	           CalculateOperation3Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation3Performed(bankAccount)
+	    return CalculateLastOperationPerformed(in bankAccount) +
+	           CalculatePreviousOperationPerformed(in bankAccount) +
+	           CalculateLastOperation1Performed(in bankAccount) +
+	           CalculatePreviousOperation1Performed(in bankAccount) +
+	           CalculateLastOperation2Performed(in bankAccount) +
+	           CalculatePreviousOperation2Performed(in bankAccount) +
+	           CalculateLastOperation3Performed(in bankAccount) +
+	           CalculatePreviousOperation3Performed(in bankAccount) +
+	           CalculateTotalAmountPerformed(in bankAccount)
 	           +
-	           CalculateOperationPerformed(bankAccount.LastOperation) +
-	           CalculateOperationPerformed(bankAccount.PreviousOperation) +
-	           CalculateOperation1Performed(bankAccount.LastOperation) +
-	           CalculateOperation1Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation2Performed(bankAccount.LastOperation) +
-	           CalculateOperation2Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation3Performed(bankAccount.LastOperation) +
-	           CalculateOperation3Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation3Performed(bankAccount)
+	           CalculateLastOperationPerformed(in bankAccount) +
+	           CalculatePreviousOperationPerformed(in bankAccount) +
+	           CalculateLastOperation1Performed(in bankAccount) +
+	           CalculatePreviousOperation1Performed(in bankAccount) +
+	           CalculateLastOperation2Performed(in bankAccount) +
+	           CalculatePreviousOperation2Performed(in bankAccount) +
+	           CalculateLastOperation3Performed(in bankAccount) +
+	           CalculatePreviousOperation3Performed(in bankAccount) +
+	           CalculateTotalAmountPerformed(in bankAccount)
 	           +
-	           CalculateOperationPerformed(bankAccount.LastOperation) +
-	           CalculateOperationPerformed(bankAccount.PreviousOperation) +
-	           CalculateOperation1Performed(bankAccount.LastOperation) +
-	           CalculateOperation1Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation2Performed(bankAccount.LastOperation) +
-	           CalculateOperation2Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation3Performed(bankAccount.LastOperation) +
-	           CalculateOperation3Performed(bankAccount.PreviousOperation) +
-	           CalculateOperation3Performed(bankAccount)
-		    ;
+	           CalculateLastOperationPerformed(in bankAccount) +
+	           CalculatePreviousOperationPerformed(in bankAccount) +
+	           CalculateLastOperation1Performed(in bankAccount) +
+	           CalculatePreviousOperation1Performed(in bankAccount) +
+	           CalculateLastOperation2Performed(in bankAccount) +
+	           CalculatePreviousOperation2Performed(in bankAccount) +
+	           CalculateLastOperation3Performed(in bankAccount) +
+	           CalculatePreviousOperation3Performed(in bankAccount) +
+	           CalculateTotalAmountPerformed(in bankAccount);
     }
 
-    private decimal CalculateOperationPerformed<T>(T bankOperation) where T : IBankOperation
+    private decimal CalculateLastOperationPerformed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
     {
         // Some calculation code
-        return bankOperation.OperationInfo0;
+        return bankOperation.LastOperation.OperationInfo0;
     }
-
-    private decimal CalculateOperation1Performed<T>(T bankOperation) where T : IBankOperation
+    private decimal CalculatePreviousOperationPerformed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
     {
-        // Some calculation code
-        return bankOperation.OperationInfo1;
+	    // Some calculation code
+	    return bankOperation.PreviousOperation.OperationInfo0;
     }
 
-    private decimal CalculateOperation2Performed<T>(T bankOperation) where T : IBankOperation
+    private decimal CalculateLastOperation1Performed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
     {
-        // Some calculation code
-        return bankOperation.OperationInfo2;
+	    // Some calculation code
+	    return bankOperation.LastOperation.OperationInfo1;
+    }
+    private decimal CalculatePreviousOperation1Performed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
+    {
+	    // Some calculation code
+	    return bankOperation.PreviousOperation.OperationInfo1;
+    }
+    private decimal CalculateLastOperation2Performed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
+    {
+	    // Some calculation code
+	    return bankOperation.LastOperation.OperationInfo2;
+    }
+    private decimal CalculatePreviousOperation2Performed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
+    {
+	    // Some calculation code
+	    return bankOperation.PreviousOperation.OperationInfo2;
+    }
+    private decimal CalculateLastOperation3Performed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
+    {
+	    // Some calculation code
+	    return bankOperation.LastOperation.TotalAmount;
+    }
+    private decimal CalculatePreviousOperation3Performed<TAccount>(in TAccount bankOperation) where TAccount: IBankAccount
+    {
+	    // Some calculation code
+	    return bankOperation.PreviousOperation.TotalAmount;
     }
 
-    private decimal CalculateOperation3Performed<TA>(in TA bankOperation) where TA: ITotalAmount
+    private decimal CalculateTotalAmountPerformed<TA>(in TA bankOperation) where TA: ITotalAmount
     {
         // Some calculation code
         return bankOperation.TotalAmount;

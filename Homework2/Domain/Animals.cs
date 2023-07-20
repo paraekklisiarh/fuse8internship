@@ -1,4 +1,4 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.Domain;
+namespace Fuse8_ByteMinds.SummerSchool.Domain;
 
 /// <summary>
 /// Животное
@@ -28,6 +28,13 @@ public abstract class Animal
 /// </summary>
 public abstract class Dog : Animal
 {
+	public override bool IsHumanFriend => true;
+	public override bool HasBigWeight => false;
+
+	public override string WhatDoesSay()
+	{
+		return "гав";
+	}
 }
 
 /// <summary>
@@ -35,6 +42,12 @@ public abstract class Dog : Animal
 /// </summary>
 public class Fox : Animal
 {
+	public override bool HasBigWeight => false;
+
+	public override string WhatDoesSay()
+	{
+		return "ми-ми-ми";
+	}
 }
 
 /// <summary>
@@ -42,6 +55,7 @@ public class Fox : Animal
 /// </summary>
 public class Chihuahua : Dog
 {
+	public override bool HasBigWeight => false;
 }
 
 /// <summary>
@@ -49,4 +63,11 @@ public class Chihuahua : Dog
 /// </summary>
 public class Husky : Dog
 {
+	public virtual bool IsHumanFriend => false;
+	public override bool HasBigWeight => true;
+
+	public new string WhatDoesSay()
+	{
+		return "ауф";
+	}
 }

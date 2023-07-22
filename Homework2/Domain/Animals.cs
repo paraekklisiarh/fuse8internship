@@ -62,8 +62,7 @@ public class Chihuahua : Dog
 /// Хаски
 /// </summary>
 public class Husky : Dog
-{
-	public virtual bool IsHumanFriend => false;
+{ 
 	public override bool HasBigWeight => true;
 
 	public new string WhatDoesSay()

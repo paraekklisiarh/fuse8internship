@@ -31,28 +31,23 @@ public static class AssemblyHelpers
         {
             var baseType = GetBaseType(classType);
 
-            if (baseType == null)
-            {
-                // Если класс сам является самым базовым, то есть наследуется только от Object, то добавляем его в словарь
-                result.TryAdd(classType.Name, 0);
-            }
+            // Оцениваея только производные классы, отсекает бызовые без наследников.
+            if (baseType == null) continue;
+            
+            // Исключаем из наследников абстрактные классы
+            if (classType.IsAbstract) continue;
+
+            // Исключить непринадлежащие к целевому namespace базовые классы.
+            if (baseType.Namespace != nameSpace) continue;
+
+            // Если класс является производным, то увеличиваем количество наследников у его базового класса
+            if (result.ContainsKey(baseType.Name))
+                result[baseType.Name] += 1;
             else
-            {
-                // Исключаем из наследников абстрактные классы
-                if (classType.IsAbstract) continue;
-
-                // Исключить непринадлежащие к целевому namespace базовые классы.
-                if (baseType.Namespace != nameSpace) continue;
-
-                // Если класс является производным, то увеличиваем количество наследников у его базового класса
-                if (result.ContainsKey(baseType.Name))
-                    result[baseType.Name] += 1;
-                else
-                    result.Add(baseType.Name, 1);
-            }
+                result.Add(baseType.Name, 1);
         }
 
-        return result.Where(kv => kv.Value >= 1).Select(keyValue => (keyValue.Key, keyValue.Value)).ToArray();
+        return result.Select(keyValue => (keyValue.Key, keyValue.Value)).ToArray();
     }
 
     /// <summary>

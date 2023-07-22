@@ -5,10 +5,10 @@
 /// </summary>
 public class Lazy<TValue>
 {
+	private readonly System.Lazy<TValue> _lazy;
 	public Lazy(Func<TValue> value)
 	{
-		Value = value.Invoke();
+		_lazy = new System.Lazy<TValue>(value);
 	}
-
-	public TValue? Value { get; }
+	public TValue Value => _lazy.Value;
 }

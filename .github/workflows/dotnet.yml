@@ -5,13 +5,35 @@ name: .NET
 
 on:
   push:
-    branches: [ "hw1" ]
+
+    branches:
+      - '*'
+
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  homework1:
 
+  homework2:
+      runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Install dependencies
+      run: dotnet restore
+      working-directory: Homework2
+    - name: Build
+      run: dotnet build --no-restore
+      working-directory: Homework2
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      working-directory: Homework2
+
+  homework1:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +45,6 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
       working-directory: Homework1
-#    - name: Restore dependencies
-#      run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
       working-directory: Homework1

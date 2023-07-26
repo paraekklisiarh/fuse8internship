@@ -7,19 +7,19 @@ public class MoneyTests
 {
 	[Theory(DisplayName = "Money создается с переданным количеством рублей и копеек")]
 	[MemberData(memberName: nameof(MoneyCreateData), MemberType = typeof(MoneyTestData))]
-	public void MoneyCreatesWithConstructorData(bool isNegative, int rubles, int kopeks)
+	public void MoneyCreatesWithConstructorData(bool isNegative, int rubles, int kopecks)
 	{
-		var money = new Money(isNegative: isNegative, rubles: rubles, kopeks: kopeks);
+		var money = new Money(isNegative: isNegative, rubles: rubles, kopecks: kopecks);
 		Assert.Equal(expected: isNegative, actual: money.IsNegative);
 		Assert.Equal(expected: rubles, actual: money.Rubles);
-		Assert.Equal(expected: kopeks, actual: money.Kopeks);
+		Assert.Equal(expected: kopecks, actual: money.Kopecks);
 	}
 
 	[Theory(DisplayName = "Money нельзя создать с кол-вом коп. > 99 и < 0 и с кол-вом руб. < 0")]
 	[MemberData(memberName: nameof(InvalidMoneyData), MemberType = typeof(MoneyTestData))]
-	public void InvalidMoney(bool isNegative, int rubles, int kopeks)
+	public void InvalidMoney(bool isNegative, int rubles, int kopecks)
 	{
-		Assert.Throws<ArgumentException>(() => new Money(isNegative, rubles: rubles, kopeks: kopeks));
+		Assert.Throws<ArgumentException>(() => new Money(isNegative, rubles: rubles, kopecks: kopecks));
 	}
 
 	[Theory(DisplayName = "При сложении двух Money рубли складываются с рублями, копейки - с копейками. При достижении макс. значения копеек - добавляется 1 руб.")]

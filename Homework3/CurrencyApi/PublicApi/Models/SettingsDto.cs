@@ -9,11 +9,11 @@ public class SettingsDto
     public string baseCurrency { get; set; }
 
     /// общее количество доступных запросов, полученное от внешнего API
-    public string requestLimit { get; set; }
+    public int requestLimit { get; set; }
 
     ///  количество использованных запросов, полученное от внешнего API
-    public string requestCount { get; set; }
+    public int requestCount { get; set; }
 
     /// Количество знаков после запятой, до которого следует округлять значение курса валют
-    public string currencyRoundCount { get; set; }
+    public int currencyRoundCount { get; set; }
 }

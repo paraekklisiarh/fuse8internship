@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers;
 
+/// <summary>
+/// Методы для взаимодействия со внешним API
+/// </summary>
 [ApiController]
 [Route("currency")]
 public class CurrencyController : ControllerBase
@@ -28,18 +31,15 @@ public class CurrencyController : ControllerBase
     {
         var apiStatus = await _currencyService.RequestLimit();
 
-        var response = new Dictionary<string, string>();
-
-        // TODO: Как-то оптимизировать валидацию конфигурации, чтобы не захламлять код.
-        response.Add("defaultCurrency",
-            _apiConfiguration["defaultCurrency"] ?? throw new InvalidOperationException("Настройки API недоступны"));
-        response.Add("baseCurrency",
-            _apiConfiguration["baseCurrency"] ?? throw new InvalidOperationException("Настройки API недоступны"));
-        response.Add("requestLimit", apiStatus.total.ToString());
-        response.Add("requestCount", apiStatus.used.ToString());
-        response.Add("currencyRoundCount",
-            _apiConfiguration["currencyRoundCount"] ?? throw new InvalidOperationException("Настройки API недоступны"));
-
+        var response = new SettingsDto()
+        {
+            defaultCurrency = _apiConfiguration["defaultCurrency"]!,
+            baseCurrency = _apiConfiguration["defaultCurrency"]!,
+            currencyRoundCount = Convert.ToInt32(_apiConfiguration["currencyRoundCount"]),
+            requestCount = apiStatus.used,
+            requestLimit = apiStatus.total
+        };
+        
         return Ok(response);
     }
 

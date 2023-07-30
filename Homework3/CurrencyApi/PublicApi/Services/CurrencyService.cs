@@ -27,7 +27,7 @@ public class CurrencyService : ICurrencyService
     public CurrencyService(IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _apiConfiguration = configuration.GetSection("ExternalApis:CurrencyAPI");
-        _httpClient = httpClientFactory.CreateClient("currencyApi");
+        _httpClient = httpClientFactory.CreateClient();
         _httpClient.BaseAddress = new Uri(_apiConfiguration["BaseUrl"] ?? string.Empty);
         _httpClient.DefaultRequestHeaders.Add("apikey", _apiConfiguration["API key"]);
     }

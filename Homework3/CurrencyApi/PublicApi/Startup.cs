@@ -58,7 +58,7 @@ public class Startup
         services.AddHttpLogging(logging => { logging.LoggingFields = HttpLoggingFields.RequestPath; });
 
         // Пусть HttpClient`ами управляет умная часть приложения
-        services.AddHttpClient("currencyApi")
+        services.AddHttpClient<ICurrencyService, CurrencyService>()
             // Повторить запросы при неудаче
             .AddPolicyHandler(
                 HttpPolicyExtensions

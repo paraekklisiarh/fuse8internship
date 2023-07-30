@@ -74,8 +74,8 @@ public class Startup
                 .IncludeContentHeaders()
             );
 
-        services.AddSerilog();
-        Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
+        services.AddSerilog(c => c
+            .ReadFrom.Configuration(configuration));
 
         Audit.Core.Configuration.Setup()
             .UseSerilog(config => config.Message(

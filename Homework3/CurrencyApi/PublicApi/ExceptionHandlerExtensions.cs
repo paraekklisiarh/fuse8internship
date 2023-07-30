@@ -43,7 +43,7 @@ public class ExceptionHandlerExtensions : IExceptionFilter
                         $"При обработке запроса {context.HttpContext.TraceIdentifier} произошла неожиданная ошибка.",
                     Status = 500
                 };
-                Log.Error(context.Exception, "Произошла неотловленная ошибка");
+                _logger.LogError(context.Exception, "Произошла неотловленная ошибка");
                 break;
         }
 

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace Fuse8_ByteMinds.SummerSchool.Domain;
 
@@ -12,8 +12,35 @@ public static class ExceptionHandler
 	public static string? Handle(Action action)
 	{
 		// TODO Реализовать обработку исключений
-		action();
-		return "Ok";
+		try
+		{
+			action();
+			return null;
+		}
+		catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.NotFound)
+		{
+			return "Ресурс не найден";
+		}
+		catch (HttpRequestException e)
+		{
+			return e.StatusCode.ToString();
+		}
+		catch (NegativeRubleCountException)
+		{
+			return "Число рублей не может быть отрицательным";
+		}
+		catch (NotValidKopekCountException)
+		{
+			return "Количество копеек должно быть больше 0 и меньше 99";
+		}
+		catch (MoneyException e)
+		{
+			return e.Message;
+		}
+		catch (Exception)
+		{
+			return "Произошла непредвиденная ошибка";
+		}
 	}
 }
 

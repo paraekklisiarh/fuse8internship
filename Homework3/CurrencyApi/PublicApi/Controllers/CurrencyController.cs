@@ -65,7 +65,7 @@ public class CurrencyController : ControllerBase
     /// <response code="404">Возвращает, если значение <see cref="currencyCode" /> не найдено</response>
     /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
-    [Route("{currencyCode:maxlength(3):regex([[A-Z]]{{3}})}/{date}")]
+    [Route("{currencyCode:regex([[A-Z]]{{3}})}/{date}")]
     public async Task<ActionResult<CurrencyOnDateDto>> GetCurrency(string currencyCode,
         // Пробовал указать regex в route, но что-то сломалось
         [FromRoute] [RegularExpression(@"^\d{4}-\d{2}-\d{2}$")]
@@ -82,12 +82,11 @@ public class CurrencyController : ControllerBase
     ///     Получение курса валюты на указанную дату
     /// </summary>
     /// <param name="currencyCode">Код валюты</param>
-    /// <param name="date">Дата курса</param>
     /// <response code="200">Возвращает, если значение успешно получено.</response>
     /// <response code="404">Возвращает, если значение <see cref="currencyCode" /> не найдено</response>
     /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
-    [Route("{currencyCode}")]
+    [Route("{currencyCode:regex([[A-Z]]{{3}})}")]
     public async Task<ActionResult<Currency>> GetCurrencyByCode([FromRoute] string currencyCode)
     {
         var currency = await _currencyService.GetCurrency(currencyCode);

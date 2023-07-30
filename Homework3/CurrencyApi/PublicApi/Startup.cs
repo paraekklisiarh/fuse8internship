@@ -21,17 +21,6 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // Грузим настройки из файлов
-        // TODO: было бы неплохо выбирать между .Development и .Prod автоматически...
-        IConfiguration configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", true, true)
-            .AddJsonFile("appsettings.Development.json",
-                true, true)
-            .Build();
-        // Регистрируем конфигурацию в сервисах
-        services.AddSingleton(configuration);
-
         services.AddControllers()
             // Добавляем глобальные настройки для преобразования Json
             .AddJsonOptions(

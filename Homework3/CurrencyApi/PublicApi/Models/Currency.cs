@@ -1,16 +1,17 @@
 ﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 
 /// <summary>
-/// Валюта
+///     Валюта
 /// </summary>
 public class Currency
 {
     /// <summary>
-    /// Код валюты
+    ///     Код валюты
     /// </summary>
     public string code { get; set; }
+
     /// <summary>
-    /// Курс валюты
+    ///     Курс валюты
     /// </summary>
     public decimal value { get; set; }
 }

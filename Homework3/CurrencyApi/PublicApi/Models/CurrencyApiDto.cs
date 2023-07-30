@@ -1,7 +1,7 @@
 ﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 
 /// <summary>
-/// Получаемый из внешнего API объект
+///     Получаемый из внешнего API объект
 /// </summary>
 public class CurrencyApiDto
 {
@@ -10,7 +10,7 @@ public class CurrencyApiDto
 }
 
 /// <summary>
-/// Метадата получаемого из внешнего API объекта <see cref="CurrencyApiDto"/>
+///     Метадата получаемого из внешнего API объекта <see cref="CurrencyApiDto" />
 /// </summary>
 public class MetaData
 {

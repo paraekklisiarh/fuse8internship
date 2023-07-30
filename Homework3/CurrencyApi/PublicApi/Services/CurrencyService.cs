@@ -16,7 +16,6 @@ public interface ICurrencyService
     Task<Currency> GetCurrencyOnDate(string code, string date);
 
     Task<(int total, int used)> RequestLimit();
-    
 }
 
 public class CurrencyService : ICurrencyService
@@ -148,7 +147,9 @@ public class CurrencyService : ICurrencyService
     /// <summary>
     ///     Парсинг <see cref="Currency" /> из <see cref="HttpResponseMessage" />
     /// </summary>
-    /// <param name="response"> <see cref="HttpResponseMessage" /> </param>
+    /// <param name="response">
+    ///     <see cref="HttpResponseMessage" />
+    /// </param>
     /// <param name="code">Код валюты</param>
     /// <returns>Объект <see cref="Currency" /></returns>
     /// <exception cref="BadHttpRequestException">

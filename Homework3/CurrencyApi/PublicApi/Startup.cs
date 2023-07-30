@@ -1,13 +1,10 @@
 ﻿using System.Text.Json.Serialization;
-using Audit.Core;
 using Audit.Http;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Models;
 using Polly;
 using Polly.Extensions.Http;
-using Serilog;
-using Serilog.Events;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi;
 
@@ -80,7 +77,7 @@ public class Startup
         //    .Enrich.FromLogContext()
         //    .WriteTo.Console()
         //    .CreateLogger();
-        
+
         //Audit.Core.Configuration.Setup()
         //    .UseSerilog(config => config.Message(
         //        auditEvent => auditEvent.ToJson()));
@@ -88,7 +85,7 @@ public class Startup
         // Регистрируем наши сервисы
         services.AddTransient<ICurrencyService, CurrencyService>();
 
-        services.AddControllers(o => 
+        services.AddControllers(o =>
             o.Filters.Add<ExceptionHandlerExtensions>());
     }
 

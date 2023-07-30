@@ -79,7 +79,7 @@ public class CurrencyController : ControllerBase
     }
 
     /// <summary>
-    ///     Получение курса валюты на указанную дату
+    ///     Получение курса валюты по коду валюты
     /// </summary>
     /// <param name="currencyCode">Код валюты</param>
     /// <response code="200">Возвращает, если значение успешно получено.</response>

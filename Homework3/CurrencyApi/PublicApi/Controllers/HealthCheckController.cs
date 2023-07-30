@@ -12,7 +12,8 @@ public class HealthCheckController : ControllerBase
 	/// <summary>
 	/// Проверить что API работает
 	/// </summary>
-	/// <param name="checkExternalApi">Необходимо проверить работоспособность внешнего API. Если FALSE или NULL - проверяется работоспособность только текущего API</param>
+	/// <param name="checkExternalApi">Необходимо проверить работоспособность внешнего API.
+	/// Если FALSE или NULL - проверяется работоспособность только текущего API</param>
 	/// <response code="200">
 	/// Возвращает если удалось получить доступ к API
 	/// </response>

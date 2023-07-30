@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
@@ -75,15 +75,12 @@ public class Startup
             );
 
         services.AddSerilog(c => c
-            .ReadFrom.Configuration(configuration));
+            .ReadFrom.Configuration(_configuration));
 
         Audit.Core.Configuration.Setup()
             .UseSerilog(config => config.Message(
                 auditEvent => auditEvent.ToJson()));
-
-        // Регистрируем наши сервисы
-        services.AddTransient<ICurrencyService, CurrencyService>();
-
+        
         services.AddControllers(o =>
             o.Filters.Add<ExceptionHandlerExtensions>());
     }

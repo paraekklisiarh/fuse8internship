@@ -24,10 +24,10 @@ public class CurrencyService : ICurrencyService
 
     private static HttpClient _httpClient = null!;
 
-    public CurrencyService(IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public CurrencyService(IConfiguration configuration, HttpClient httpClient)
     {
         _apiConfiguration = configuration.GetSection("ExternalApis:CurrencyAPI");
-        _httpClient = httpClientFactory.CreateClient();
+        _httpClient = httpClient;
         _httpClient.BaseAddress = new Uri(_apiConfiguration["BaseUrl"] ?? string.Empty);
         _httpClient.DefaultRequestHeaders.Add("apikey", _apiConfiguration["API key"]);
     }

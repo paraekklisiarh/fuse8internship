@@ -24,10 +24,11 @@ public class CurrencyController : ControllerBase
     /// <summary>
     /// Текущие настройки приложения
     /// </summary>
-    /// <returns></returns>
+    /// <response code="200">Возвращает, если настройки успешно получены.</response>
+    /// 
     [Route("settings")]
     [HttpGet]
-    public async Task<IActionResult> GetSettings()
+    public async Task<ActionResult<SettingsDto>> GetSettings()
     {
         var apiStatus = await _currencyService.RequestLimit();
 
@@ -48,8 +49,9 @@ public class CurrencyController : ControllerBase
     /// </summary>
     /// <response code="200">Возвращает, если значение успешно получено.</response>
     /// <response code="400">Возвращает, если значение по умолчанию не найдено</response>
+    /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
-    public async Task<IActionResult> GetDefaultCurrency()
+    public async Task<ActionResult<Currency>> GetDefaultCurrency()
     {
         var response = await _currencyService.GetDefaultCurrency();
         return Ok(response);
@@ -65,7 +67,7 @@ public class CurrencyController : ControllerBase
     /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
     [Route("{currencyCode:maxlength(3):regex([[A-Z]]{{3}})}/{date}")]
-    public async Task<IActionResult> GetCurrency(string currencyCode,
+    public async Task<ActionResult<CurrencyOnDateDto>> GetCurrency(string currencyCode,
         // Пробовал указать regex в route, но что-то сломалось
         [FromRoute] [RegularExpression(@"^\d{4}-\d{2}-\d{2}$")] string date)
     {
@@ -86,7 +88,7 @@ public class CurrencyController : ControllerBase
     /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
     [Route("{currencyCode}")]
-    public async Task<IActionResult> GetCurrencyByCode([FromRoute] string currencyCode)
+    public async Task<ActionResult<Currency>> GetCurrencyByCode([FromRoute] string currencyCode)
     {
         var currency = await _currencyService.GetCurrency(currencyCode);
 

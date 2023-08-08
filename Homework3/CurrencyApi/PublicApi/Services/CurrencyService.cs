@@ -26,7 +26,7 @@ public class CurrencyService : ICurrencyService
 
     private static HttpClient _httpClient = null!;
 
-    public CurrencyService(IOptions<CurrencyApiSettings> configuration, HttpClient httpClient)
+    public CurrencyService(IOptionsSnapshot<CurrencyApiSettings> configuration, HttpClient httpClient)
     {
         _apiConfiguration = configuration.Value;
         _httpClient = httpClient;
@@ -119,11 +119,10 @@ public class CurrencyService : ICurrencyService
     }
 
     /// <summary>
-    ///     Получить лимиты запросов API
+    ///     Получить статус внешнего API
     /// </summary>
     /// <returns>
-    ///     total: общее количество доступных запросов внешнего API;
-    ///     user: количество использованных запросов;
+    ///     Возвращает объект <see cref="ApiStatusDto"/>, содержащий сведения о внешнем API
     /// </returns>
     private async Task<ApiStatusDto> RequestApiStatus()
     {

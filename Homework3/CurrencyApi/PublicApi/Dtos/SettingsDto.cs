@@ -1,4 +1,4 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 
 public class SettingsDto
 {
@@ -10,7 +10,7 @@ public class SettingsDto
     /// <summary>
     ///     базовая валюта, относительно которой считается курс
     /// </summary>
-    public string baseCurrency { get; set; }
+    public string? baseCurrency { get; set; }
 
     /// <summary>
     ///     общее количество доступных запросов, полученное от внешнего API

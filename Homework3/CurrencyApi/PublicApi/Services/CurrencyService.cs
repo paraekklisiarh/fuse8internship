@@ -3,7 +3,9 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+using Microsoft.Extensions.Options;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 
@@ -24,11 +26,11 @@ public class CurrencyService : ICurrencyService
 
     private static HttpClient _httpClient = null!;
 
-    public CurrencyService(CurrencyApiSettings configuration, HttpClient httpClient)
+    public CurrencyService(IOptions<CurrencyApiSettings> configuration, HttpClient httpClient)
     {
-        _apiConfiguration = configuration;
+        _apiConfiguration = configuration.Value;
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri(_apiConfiguration.baseUrl);
+        _httpClient.BaseAddress = new Uri(_apiConfiguration.BaseUrl);
         _httpClient.DefaultRequestHeaders.Add("apikey", _apiConfiguration.ApiKey);
     }
 
@@ -41,7 +43,7 @@ public class CurrencyService : ICurrencyService
     {
         await IsRequestLimitNotZero();
 
-        _httpClient.DefaultRequestHeaders.Add("base_currency", _apiConfiguration.baseCurrency);
+        _httpClient.DefaultRequestHeaders.Add("base_currency", _apiConfiguration.BaseCurrency);
 
         using var response = await _httpClient.GetAsync("latest?currencies=" + currencyCode);
         if (response.StatusCode is HttpStatusCode.UnprocessableEntity)
@@ -60,7 +62,7 @@ public class CurrencyService : ICurrencyService
     public async Task<Currency> GetDefaultCurrency()
     {
         await IsRequestLimitNotZero();
-        var currencyCode = _apiConfiguration.defaultCurrency;
+        var currencyCode = _apiConfiguration.DefaultCurrency;
 
         _httpClient.DefaultRequestHeaders.Add("base_currency", currencyCode);
 
@@ -106,9 +108,9 @@ public class CurrencyService : ICurrencyService
 
         var dto = new SettingsDto
         {
-            defaultCurrency = _apiConfiguration.defaultCurrency,
-            baseCurrency = _apiConfiguration.baseCurrency,
-            currencyRoundCount = Convert.ToInt32(_apiConfiguration.currencyRoundCount),
+            defaultCurrency = _apiConfiguration.DefaultCurrency,
+            baseCurrency = _apiConfiguration.BaseCurrency,
+            currencyRoundCount = Convert.ToInt32(_apiConfiguration.CurrencyRoundCount),
             requestCount = apiStatus.used,
             requestLimit = apiStatus.total
         };
@@ -161,7 +163,7 @@ public class CurrencyService : ICurrencyService
     /// <returns>Округленное до знака после запятой из конфигурации значение</returns>
     private decimal Rounding(decimal value)
     {
-        return Math.Round(value, Convert.ToInt32(_apiConfiguration.currencyRoundCount));
+        return Math.Round(value, Convert.ToInt32(_apiConfiguration.CurrencyRoundCount));
     }
 
     /// <summary>

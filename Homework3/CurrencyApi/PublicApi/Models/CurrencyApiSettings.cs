@@ -2,11 +2,11 @@
 
 public class CurrencyApiSettings
 {
-    public string baseUrl { get; init; }
-    public string defaultCurrency { get; init; }
-    public string baseCurrency { get; init; }
-    public int currencyRoundCount { get; init; }
+    public required string BaseUrl { get; init; }
+    public required string DefaultCurrency { get; init; }
+    public string? BaseCurrency { get; init; }
+    public int CurrencyRoundCount { get; init; }
     
-    public string ApiKey { get; init; }
+    public required string ApiKey { get; init; }
     
 }

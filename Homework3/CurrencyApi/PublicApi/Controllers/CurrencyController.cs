@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.Mvc;

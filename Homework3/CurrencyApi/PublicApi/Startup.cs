@@ -75,7 +75,7 @@ public class Startup
             o.Filters.Add<ExceptionHandlerExtensions>());
 
         // Регистрирую настройки внешнего API
-        services.Configure<CurrencyApiSettings>(_configuration.GetSection("CurrencyAPI"));
+        services.Configure<CurrencyApiSettings>(_configuration.GetSection("ExternalApis:CurrencyAPI"));
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

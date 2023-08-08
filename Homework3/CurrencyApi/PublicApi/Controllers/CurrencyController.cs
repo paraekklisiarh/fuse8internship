@@ -12,13 +12,13 @@ namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers;
 [Route("currency")]
 public class CurrencyController : ControllerBase
 {
-    private readonly IConfigurationSection _apiConfiguration;
+    private readonly CurrencyApiSettings _apiConfiguration;
     private readonly ICurrencyService _currencyService;
 
-    public CurrencyController(ICurrencyService currencyService, IConfiguration configuration)
+    public CurrencyController(ICurrencyService currencyService, CurrencyApiSettings configuration)
     {
         _currencyService = currencyService;
-        _apiConfiguration = configuration.GetSection("ExternalApis:CurrencyAPI");
+        _apiConfiguration = configuration;
     }
 
     /// <summary>
@@ -33,9 +33,9 @@ public class CurrencyController : ControllerBase
 
         var response = new SettingsDto
         {
-            defaultCurrency = _apiConfiguration["defaultCurrency"]!,
-            baseCurrency = _apiConfiguration["defaultCurrency"]!,
-            currencyRoundCount = Convert.ToInt32(_apiConfiguration["currencyRoundCount"]),
+            defaultCurrency = _apiConfiguration.defaultCurrency,
+            baseCurrency = _apiConfiguration.baseCurrency,
+            currencyRoundCount = Convert.ToInt32(_apiConfiguration.currencyRoundCount),
             requestCount = apiStatus.used,
             requestLimit = apiStatus.total
         };

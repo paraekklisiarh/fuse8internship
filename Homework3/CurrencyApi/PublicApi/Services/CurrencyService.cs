@@ -20,16 +20,16 @@ public interface ICurrencyService
 
 public class CurrencyService : ICurrencyService
 {
-    private readonly IConfigurationSection _apiConfiguration;
+    private readonly CurrencyApiSettings _apiConfiguration;
 
     private static HttpClient _httpClient = null!;
 
-    public CurrencyService(IConfiguration configuration, HttpClient httpClient)
+    public CurrencyService(CurrencyApiSettings configuration, HttpClient httpClient)
     {
-        _apiConfiguration = configuration.GetSection("ExternalApis:CurrencyAPI");
+        _apiConfiguration = configuration;
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri(_apiConfiguration["BaseUrl"] ?? string.Empty);
-        _httpClient.DefaultRequestHeaders.Add("apikey", _apiConfiguration["API key"]);
+        _httpClient.BaseAddress = new Uri(_apiConfiguration.baseUrl);
+        _httpClient.DefaultRequestHeaders.Add("apikey", _apiConfiguration.ApiKey);
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public class CurrencyService : ICurrencyService
     {
         await IsRequestLimitNotZero();
 
-        _httpClient.DefaultRequestHeaders.Add("base_currency", _apiConfiguration["baseCurrency"]);
+        _httpClient.DefaultRequestHeaders.Add("base_currency", _apiConfiguration.baseCurrency);
 
         using var response = await _httpClient.GetAsync("latest?currencies=" + currencyCode);
         if (response.StatusCode is HttpStatusCode.UnprocessableEntity)
@@ -60,7 +60,7 @@ public class CurrencyService : ICurrencyService
     public async Task<Currency> GetDefaultCurrency()
     {
         await IsRequestLimitNotZero();
-        var currencyCode = _apiConfiguration["defaultCurrency"];
+        var currencyCode = _apiConfiguration.defaultCurrency;
 
         _httpClient.DefaultRequestHeaders.Add("base_currency", currencyCode);
 
@@ -141,7 +141,7 @@ public class CurrencyService : ICurrencyService
     /// <returns>Округленное до знака после запятой из конфигурации значение</returns>
     private decimal Rounding(decimal value)
     {
-        return Math.Round(value, Convert.ToInt32(_apiConfiguration["currencyRoundCount"]));
+        return Math.Round(value, Convert.ToInt32(_apiConfiguration.currencyRoundCount));
     }
 
     /// <summary>

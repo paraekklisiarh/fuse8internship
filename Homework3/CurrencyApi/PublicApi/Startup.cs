@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Models;
@@ -72,6 +73,9 @@ public class Startup
         
         services.AddControllers(o =>
             o.Filters.Add<ExceptionHandlerExtensions>());
+
+        // Регистрирую настройки внешнего API
+        services.Configure<CurrencyApiSettings>(_configuration.GetSection("CurrencyAPI"));
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

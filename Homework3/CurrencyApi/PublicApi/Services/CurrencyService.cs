@@ -9,13 +9,13 @@ namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 
 public interface ICurrencyService
 {
-    Task<Currency> GetCurrency(string currencyCode);
+    public Task<Currency> GetCurrency(string currencyCode);
 
-    Task<Currency> GetDefaultCurrency();
+    public Task<Currency> GetDefaultCurrency();
 
-    Task<Currency> GetCurrencyOnDate(string code, string date);
+    public Task<Currency> GetCurrencyOnDate(string code, string date);
 
-    Task<(int total, int used)> RequestLimit();
+    public Task<SettingsDto> GetSettings();
 }
 
 public class CurrencyService : ICurrencyService
@@ -97,13 +97,33 @@ public class CurrencyService : ICurrencyService
     }
 
     /// <summary>
+    ///     Получение текущих настроек API
+    /// </summary>
+    /// <returns>Объект <see cref="SettingsDto" />, содержащий актуальные настройки API</returns>
+    public async Task<SettingsDto> GetSettings()
+    {
+        var apiStatus = await RequestLimit();
+
+        var dto = new SettingsDto
+        {
+            defaultCurrency = _apiConfiguration.defaultCurrency,
+            baseCurrency = _apiConfiguration.baseCurrency,
+            currencyRoundCount = Convert.ToInt32(_apiConfiguration.currencyRoundCount),
+            requestCount = apiStatus.used,
+            requestLimit = apiStatus.total
+        };
+
+        return dto;
+    }
+
+    /// <summary>
     ///     Получить лимиты запросов API
     /// </summary>
     /// <returns>
     ///     total: общее количество доступных запросов внешнего API;
     ///     user: количество использованных запросов;
     /// </returns>
-    public async Task<(int total, int used)> RequestLimit()
+    private async Task<(int total, int used)> RequestLimit()
     {
         using var response = await _httpClient.GetAsync("status");
         response.EnsureSuccessStatusCode();

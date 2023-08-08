@@ -1,4 +1,7 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+﻿using System.Text.Json.Serialization;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+
+namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 
 /// <summary>
 ///     DTO валюты с указанием даты курса
@@ -8,5 +11,6 @@ public class CurrencyOnDateDto : Currency
     /// <summary>
     ///     Дата курса валюты
     /// </summary>
-    public string date { get; set; }
+    [JsonPropertyName("date")]
+    public string Date { get; set; }
 }

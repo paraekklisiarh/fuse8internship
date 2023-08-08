@@ -64,7 +64,7 @@ public class CurrencyController : ControllerBase
         var apiDto = await _currencyService.GetCurrencyOnDate(currencyCode, date);
 
         var currencyOnDateDto = new CurrencyOnDateDto
-            { date = date, code = apiDto.code, value = apiDto.value };
+            { Date = date, Code = apiDto.Code, Value = apiDto.Value };
         return Ok(currencyOnDateDto);
     }
 

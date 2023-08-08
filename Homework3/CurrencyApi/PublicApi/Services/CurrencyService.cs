@@ -104,15 +104,15 @@ public class CurrencyService : ICurrencyService
     /// <returns>Объект <see cref="SettingsDto" />, содержащий актуальные настройки API</returns>
     public async Task<SettingsDto> GetSettings()
     {
-        var apiStatus = await RequestLimit();
+        var apiStatus = await RequestApiStatus();
 
         var dto = new SettingsDto
         {
-            defaultCurrency = _apiConfiguration.DefaultCurrency,
-            baseCurrency = _apiConfiguration.BaseCurrency,
-            currencyRoundCount = Convert.ToInt32(_apiConfiguration.CurrencyRoundCount),
-            requestCount = apiStatus.used,
-            requestLimit = apiStatus.total
+            DefaultCurrency = _apiConfiguration.DefaultCurrency,
+            BaseCurrency = _apiConfiguration.BaseCurrency,
+            CurrencyRoundCount = Convert.ToInt32(_apiConfiguration.CurrencyRoundCount),
+            RequestCount = apiStatus.Quotas.Month.Used,
+            RequestLimit = apiStatus.Quotas.Month.Total
         };
 
         return dto;
@@ -125,35 +125,30 @@ public class CurrencyService : ICurrencyService
     ///     total: общее количество доступных запросов внешнего API;
     ///     user: количество использованных запросов;
     /// </returns>
-    private async Task<(int total, int used)> RequestLimit()
+    private async Task<ApiStatusDto> RequestApiStatus()
     {
         using var response = await _httpClient.GetAsync("status");
         response.EnsureSuccessStatusCode();
 
         var responseBody = await response.Content.ReadAsStringAsync();
+        
+        var apiStatus = JsonSerializer.Deserialize<ApiStatusDto>(responseBody);
 
-        var json = JsonNode.Parse(responseBody);
-
-        // Пожадничал создавать под два элемента классы.
-        return ((int)json["quotas"]["month"]["total"],
-            (int)json["quotas"]["month"]["used"]);
+        return apiStatus ?? throw new InvalidOperationException();
     }
 
     /// <summary>
     ///     Проверяет, равно ли количество доступных токенов нулю. Если равно - исключение.
     /// </summary>
     /// <exception cref="ApiRequestLimitException">Количество доступных токенов равно нулю.</exception>
-    private static async Task IsRequestLimitNotZero()
+    private async Task IsRequestLimitNotZero()
     {
-        using var response = await _httpClient.GetAsync("status");
-        response.EnsureSuccessStatusCode();
+        var apiStatus = await RequestApiStatus();
 
-        var responseBody = await response.Content.ReadAsStringAsync();
-
-        var json = JsonNode.Parse(responseBody);
-
-        if ((int)json["quotas"]["month"]["remaining"] == 0)
-            throw new ApiRequestLimitException("Токены CurrencyApi закончились.");
+        if (apiStatus.Quotas.Month.Remaining <= apiStatus.Quotas.Month.Used)
+        {
+            throw new ApiRequestLimitException("Свободные токены CurrencyAPI закончились");
+        }
     }
 
     /// <summary>
@@ -183,9 +178,9 @@ public class CurrencyService : ICurrencyService
 
         var apiDto = JsonSerializer.Deserialize<CurrencyApiDto>(responseApiBody);
 
-        var currency = apiDto!.data[code];
+        var currency = apiDto!.Data[code];
 
-        currency.value = Rounding(currency.value);
+        currency.Value = Rounding(currency.Value);
 
         return currency;
     }

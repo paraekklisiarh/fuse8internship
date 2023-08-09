@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PublicApi</name>
+    </assembly>
+    <members>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.CurrencyController">
+            <summary>
+                Методы для взаимодействия со внешним API
+            </summary>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.CurrencyController.GetSettings">
+            <summary>
+                Текущие настройки приложения
+            </summary>
+            <response code="200">Возвращает, если настройки успешно получены.</response>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.CurrencyController.GetDefaultCurrency">
+            <summary>
+                Получение курса валюты с кодом по умолчанию
+            </summary>
+            <response code="200">Возвращает, если значение успешно получено.</response>
+            <response code="400">Возвращает, если значение по умолчанию не найдено</response>
+            <response code="429">Возвращает, если токены API исчерпаны.</response>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.CurrencyController.GetCurrency(System.String,System.String)">
+            <summary>
+                Получение курса валюты на указанную дату
+            </summary>
+            <param name="currencyCode">Код валюты</param>
+            <param name="date">Дата курса</param>
+            <response code="200">Возвращает, если значение успешно получено.</response>
+            <response code="404">Возвращает, если значение <see cref="!:currencyCode" /> не найдено</response>
+            <response code="429">Возвращает, если токены API исчерпаны.</response>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.CurrencyController.GetCurrencyByCode(System.String)">
+            <summary>
+                Получение курса валюты по коду валюты
+            </summary>
+            <param name="currencyCode">Код валюты</param>
+            <response code="200">Возвращает, если значение успешно получено.</response>
+            <response code="404">Возвращает, если значение <see cref="!:currencyCode" /> не найдено</response>
+            <response code="429">Возвращает, если токены API исчерпаны.</response>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckController">
+            <summary>
+            Методы для проверки работоспособности PublicApi
+            </summary>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckController.Check(System.Nullable{System.Boolean})">
+            <summary>
+            Проверить что API работает
+            </summary>
+            <param name="checkExternalApi">Необходимо проверить работоспособность внешнего API.
+            Если FALSE или NULL - проверяется работоспособность только текущего API</param>
+            <response code="200">
+            Возвращает если удалось получить доступ к API
+            </response>
+            <response code="400">
+            Возвращает если удалось не удалось получить доступ к API
+            </response>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckResult">
+            <summary>
+            Результат проверки работоспособности API
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckResult.CheckedOn">
+            <summary>
+            Дата проверки
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckResult.Status">
+            <summary>
+            Статус работоспособности API
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckResult.CheckStatus">
+            <summary>
+            Статус API
+            </summary>
+        </member>
+        <member name="F:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckResult.CheckStatus.Ok">
+            <summary>
+            API работает
+            </summary>
+        </member>
+        <member name="F:Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers.HealthCheckResult.CheckStatus.Failed">
+            <summary>
+            Ошибка в работе API
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.ApiStatusDto">
+            <summary>
+                Статус внешнего API
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.ApiStatusDto.AccountId">
+            <summary>
+            ID аккаунта
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.ApiStatusDto.Quotas">
+            <summary>
+            Лимиты в текущем месяце
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.ApiLimitsDto">
+            <summary>
+            Лимиты внешнего API
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.CurrencyApiDto">
+            <summary>
+                Получаемый из внешнего API объект
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.CurrencyApiDto.Meta">
+            <summary>
+            Мета-данные запроса
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.CurrencyApiDto.Data">
+            <summary>
+            Содержимое запроса - словарь код_валюты : <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency"/>
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.MetaData">
+            <summary>
+                Метадата получаемого из внешнего API объекта <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.CurrencyApiDto" />
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.MetaData.LastUpdatedAt">
+            <summary>
+            Дата последнего обновления курса валюты
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.CurrencyOnDateDto">
+            <summary>
+                DTO валюты с указанием даты курса
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.CurrencyOnDateDto.Date">
+            <summary>
+                Дата курса валюты
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.SettingsDto.DefaultCurrency">
+            <summary>
+                текущий курс валют по умолчанию из конфигурации
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.SettingsDto.BaseCurrency">
+            <summary>
+                базовая валюта, относительно которой считается курс
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.SettingsDto.RequestLimit">
+            <summary>
+                общее количество доступных запросов, полученное от внешнего API
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.SettingsDto.RequestCount">
+            <summary>
+                количество использованных запросов, полученное от внешнего API
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.SettingsDto.CurrencyRoundCount">
+            <summary>
+                Количество знаков после запятой, до которого следует округлять значение курса валют
+            </summary>
+        </member>
+        <member name="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency">
+            <summary>
+                Валюта
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency.Code">
+            <summary>
+                Код валюты
+            </summary>
+        </member>
+        <member name="P:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency.Value">
+            <summary>
+                Курс валюты
+            </summary>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.GetCurrency(System.String)">
+            <summary>
+                Получение из внешнего API валюты по заданному коду
+            </summary>
+            <param name="currencyCode">Код валюты</param>
+            <returns>Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency" /></returns>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.GetDefaultCurrency">
+            <summary>
+                Получение валюты с кодом по умолчанию
+            </summary>
+            <returns>Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency" /></returns>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.GetCurrencyOnDate(System.String,System.String)">
+            <summary>
+                Получение курса валюты на заданную дату
+            </summary>
+            <param name="currencyCode">Код валюты</param>
+            <param name="date">Дата, курс на которую нужно получить, формата YYYY-MM-DD</param>
+            <returns>Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency" /></returns>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.GetSettings">
+            <summary>
+                Получение текущих настроек API
+            </summary>
+            <returns>Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.SettingsDto" />, содержащий актуальные настройки API</returns>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.RequestApiStatus">
+            <summary>
+                Получить статус внешнего API: лимиты запросов
+            </summary>
+            <returns>
+                Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos.ApiStatusDto"/>: статус внешнего API
+            </returns>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.IsRequestLimitNotZero">
+            <summary>
+                Проверяет, равно ли количество доступных токенов нулю. Если равно - исключение.
+            </summary>
+            <exception cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.ApiRequestLimitException">Количество доступных токенов равно нулю.</exception>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.Rounding(System.Decimal)">
+            <summary>
+                Округление курса валюты до знака из конфигурации
+            </summary>
+            <param name="value">Округляемое значение</param>
+            <returns>Округленное до знака после запятой из конфигурации значение</returns>
+        </member>
+        <member name="M:Fuse8_ByteMinds.SummerSchool.PublicApi.Services.CurrencyService.ParseCurrencyFromApiResponse(System.Net.Http.HttpResponseMessage,System.String)">
+            <summary>
+                Парсинг <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency" /> из <see cref="T:System.Net.Http.HttpResponseMessage" />
+            </summary>
+            <param name="response">
+                <see cref="T:System.Net.Http.HttpResponseMessage" />
+            </param>
+            <param name="code">Код валюты</param>
+            <returns>Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency" /></returns>
+            <exception cref="T:Microsoft.AspNetCore.Http.BadHttpRequestException">
+                Объект <see cref="T:Fuse8_ByteMinds.SummerSchool.PublicApi.Models.Currency" /> не найден, получены неверные данные из вызывающего метода
+            </exception>
+        </member>
+    </members>
+</doc>

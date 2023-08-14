@@ -12,5 +12,5 @@ public class CurrencyOnDateDto : Currency
     ///     Дата курса валюты
     /// </summary>
     [JsonPropertyName("date")]
-    public string Date { get; set; }
+    public DateOnly Date { get; set; }
 }

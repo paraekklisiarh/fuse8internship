@@ -1,38 +1,38 @@
-﻿using Grpc.Core;
+﻿using InternalApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Fuse8_ByteMinds.SummerSchool.PublicApi;
+namespace InternalApi;
 
-public class ExceptionHandlerExtensions : IAsyncExceptionFilter
+/// <summary>
+/// Глобальный обработчик исключений
+/// </summary>
+public class ExceptionHandlerExtensions : IExceptionFilter
 {
     private readonly ILogger<ExceptionHandlerExtensions> _logger;
 
+    /// <summary>
+    /// Конструктор глобального обработчика исключений
+    /// </summary>
+    /// <param name="logger">Логгер</param>
     public ExceptionHandlerExtensions(ILogger<ExceptionHandlerExtensions> logger)
     {
         _logger = logger;
     }
 
-    public Task OnExceptionAsync(ExceptionContext context)
+    /// <inheritdoc />
+    public void OnException(ExceptionContext context)
     {
         ProblemDetails problemDetails;
         switch (context.Exception)
         {
-            case RpcException { Status.StatusCode: StatusCode.Internal } exception:
+            case ApiRequestLimitException:
                 problemDetails = new ProblemDetails
                 {
-                    Title = "Произошла ошибка на сервере", Detail = exception.Status.Detail, Status = 500
+                    Title = "Запросы исчерпаны", Detail = $"На сервере закончились токены API.", Status = 429
                 };
-                _logger.LogError(exception, "Произошла ошибка GRPC-сервера");
-                break;
-            case RpcException {Status.StatusCode: StatusCode.ResourceExhausted}:
-                problemDetails = new ProblemDetails
-                {
-                    Title = "Произошла ошибка на сервере",
-                    Detail = "Закончились токены внешнего API",
-                    Status = 429
-                };
-                _logger.LogCritical("Закончились токены внешнего API");
+
+                _logger.LogError(context.Exception, "Закончились токены CurrencyAPI");
                 break;
             default:
                 problemDetails = new ProblemDetails
@@ -48,7 +48,5 @@ public class ExceptionHandlerExtensions : IAsyncExceptionFilter
 
         context.Result = new ObjectResult(problemDetails) { StatusCode = problemDetails.Status };
         context.ExceptionHandled = true;
-
-        return Task.CompletedTask;
     }
 }

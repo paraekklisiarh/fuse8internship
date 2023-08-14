@@ -5,9 +5,8 @@ using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.OpenApi.Models;
-using Polly;
-using Polly.Extensions.Http;
 using Serilog;
+using TestGrpc;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi;
 
@@ -47,15 +46,26 @@ public class Startup
         // Логирование входящих запросов
         services.AddHttpLogging(logging => { logging.LoggingFields = HttpLoggingFields.RequestPath; });
 
-        // Пусть HttpClient`ами управляет умная часть приложения
-        services.AddHttpClient<ICurrencyService, CurrencyService>()
-            // Повторить запросы при неудаче
-            .AddPolicyHandler(
-                HttpPolicyExtensions
-                    .HandleTransientHttpError()
-                    .WaitAndRetryAsync(3,
-                        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt) - 1)))
-            // Добавляем логирование запросов
+        services.AddSerilog(c => c
+            .ReadFrom.Configuration(_configuration));
+
+        Configuration.Setup()
+            .UseSerilog(config => config.Message(
+                auditEvent => auditEvent.ToJson()));
+
+        services.AddControllers(o =>
+            o.Filters.Add<ExceptionHandlerExtensions>());
+
+        // Регистрирую настройки внешнего API
+        services.Configure<CurrencyApiSettings>(_configuration.GetSection("ExternalApis:CurrencyAPI"));
+
+        // grpc client
+        services.AddGrpcClient<GetCurrency.GetCurrencyClient>(o =>
+            {
+                var uriString = _configuration.GetValue<string>("ExternalApis:CurrencyAPI:BaseUrl");
+                if (uriString != null)
+                    o.Address = new Uri(uriString);
+            })
             .AddAuditHandler(audit => audit
                 .IncludeRequestHeaders()
                 .IncludeRequestBody()
@@ -64,18 +74,8 @@ public class Startup
                 .IncludeContentHeaders()
             );
 
-        services.AddSerilog(c => c
-            .ReadFrom.Configuration(_configuration));
-
-        Audit.Core.Configuration.Setup()
-            .UseSerilog(config => config.Message(
-                auditEvent => auditEvent.ToJson()));
-        
-        services.AddControllers(o =>
-            o.Filters.Add<ExceptionHandlerExtensions>());
-
-        // Регистрирую настройки внешнего API
-        services.Configure<CurrencyApiSettings>(_configuration.GetSection("ExternalApis:CurrencyAPI"));
+        // Our services register
+        services.AddTransient<ICurrencyService, CurrencyService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

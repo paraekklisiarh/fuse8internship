@@ -1,12 +1,11 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
+﻿
+namespace InternalApi.Dtos;
 
+/// <summary>
+/// Настройки API
+/// </summary>
 public class SettingsDto
 {
-    /// <summary>
-    ///     текущий курс валют по умолчанию из конфигурации
-    /// </summary>
-    public string? DefaultCurrency { get; set; }
-
     /// <summary>
     ///     базовая валюта, относительно которой считается курс
     /// </summary>

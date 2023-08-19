@@ -45,7 +45,7 @@ services.AddSerilog(c => c
     .ReadFrom.Configuration(configuration));
 
 // Логирование входящих запросов
-services.AddHttpLogging(logging => { logging.LoggingFields = HttpLoggingFields.RequestPath; });
+services.AddHttpLogging(logging => { logging.LoggingFields = HttpLoggingFields.RequestPath | HttpLoggingFields.RequestMethod; });
 
 // Audit logging
 Configuration.Setup()
@@ -117,11 +117,17 @@ if (env.IsDevelopment())
     app.MapGrpcReflectionService();
 }
 
-app.UseRouting()
-    .UseEndpoints(endpoints =>
+app.UseWhen(
+    predicate: c => c.Connection.LocalPort == configuration.GetValue<int>("GrpcPort"),
+    configuration: grpcBuilder =>
     {
-        endpoints.MapGrpcService<GetCurrencyService>();
-        endpoints.MapControllers();
+        grpcBuilder.UseRouting().UseEndpoints(e => e.MapGrpcService<GetCurrencyService>());
+    });
+app.UseWhen(
+    predicate: c => c.Connection.LocalPort != configuration.GetValue<int>("GrpcPort"),
+    configuration: grpcBuilder =>
+    {
+        grpcBuilder.UseRouting().UseEndpoints(e => e.MapControllers());
     });
 
 // RUN!

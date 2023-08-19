@@ -1,12 +1,14 @@
 using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
+using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using TestGrpc;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi;
 
@@ -32,8 +34,20 @@ public class Startup
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
 
-        services.AddEndpointsApiExplorer();
-
+        services.AddDbContext<AppDbContext>((_, builder) =>
+        {
+            var currentAssemblyName = typeof(AppDbContext).Assembly.FullName;
+            var dbConnectionString = _configuration.GetConnectionString("CurrencyApi");
+            builder.UseNpgsql(
+                    dbConnectionString,
+                    b => b
+                        .MigrationsAssembly(currentAssemblyName)
+                        .MigrationsHistoryTable(HistoryRepository.DefaultTableName, "user")
+                        .EnableRetryOnFailure())
+                .UseSnakeCaseNamingConvention()
+                .UseAllCheckConstraints();
+        } );
+        
         services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc(
@@ -56,8 +70,6 @@ public class Startup
         services.AddControllers(o =>
             o.Filters.Add<ExceptionHandlerExtensions>());
 
-        // Регистрирую настройки внешнего API
-        services.Configure<CurrencyApiSettings>(_configuration.GetSection("ExternalApis:CurrencyAPI"));
 
         // grpc client
         services.AddGrpcClient<GetCurrency.GetCurrencyClient>(o =>
@@ -74,8 +86,13 @@ public class Startup
                 .IncludeContentHeaders()
             );
 
+        // Регистрирую настройки внешнего API
+        services.AddScoped(typeof(CurrencyApiSettings));
+        
         // Our services register
         services.AddTransient<ICurrencyService, CurrencyService>();
+        services.AddTransient<IFavouriteCurrencyService, FavouriteCurrencyService>();
+        services.AddTransient<IApiSettingsService, ApiSettingsService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

@@ -1,18 +1,26 @@
-﻿using Grpc.Core;
+﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
+using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi;
 
+/// <inheritdoc />
 public class ExceptionHandlerExtensions : IAsyncExceptionFilter
 {
     private readonly ILogger<ExceptionHandlerExtensions> _logger;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="logger"></param>
     public ExceptionHandlerExtensions(ILogger<ExceptionHandlerExtensions> logger)
     {
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public Task OnExceptionAsync(ExceptionContext context)
     {
         ProblemDetails problemDetails;
@@ -33,6 +41,30 @@ public class ExceptionHandlerExtensions : IAsyncExceptionFilter
                     Status = 429
                 };
                 _logger.LogCritical("Закончились токены внешнего API");
+                break;
+            case ApiSettingsAreNotSet exception:
+                problemDetails = new ProblemDetails
+                {
+                    Title = "Настройки API не установлены",
+                    Status = 404,
+                    Detail = exception.Message,
+                };
+                break;
+            case NotUniqueFavouriteCurrency exception:
+                problemDetails = new ProblemDetails
+                {
+                    Title = "Ошибка создания/изменения избранного",
+                    Status = (int?)StatusCode.AlreadyExists,
+                    Detail = exception.Message
+                };
+                break;
+            case FavouriteCurrencyNotFoundException exception:
+                problemDetails = new ProblemDetails
+                {
+                    Title = "Не найдена избранная валюта",
+                    Detail = exception.Message,
+                    Status = 404
+                };
                 break;
             default:
                 problemDetails = new ProblemDetails

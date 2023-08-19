@@ -1,8 +1,8 @@
-﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
+﻿using CurrencyApi;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Options;
-using TestGrpc;
 using Enum = System.Enum;
 
 
@@ -16,7 +16,7 @@ public interface ICurrencyService
     /// <param name="currencyCode">Код валюты</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Объект <see cref="Currency" /></returns>
-    public Task<Currency> GetCurrencyAsync(CurrencyType currencyCode, CancellationToken cancellationToken);
+    public Task<Currency> GetCurrencyAsync(CurrencyTypeDTO currencyCode, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Получение валюты с кодом по умолчанию
@@ -31,7 +31,7 @@ public interface ICurrencyService
     /// <param name="date">Дата, курс на которую нужно получить, формата YYYY-MM-DD</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Объект <see cref="Currency" /></returns>
-    public Task<Currency> GetCurrencyOnDateAsync(CurrencyType currencyCode, DateOnly date, CancellationToken cancellationToken);
+    public Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Получение текущих настроек API
@@ -45,14 +45,14 @@ public class CurrencyService : ICurrencyService
     private readonly CurrencyApiSettings _apiConfiguration;
     private readonly GetCurrency.GetCurrencyClient _getCurrencyClient;
 
-    public CurrencyService(IOptionsSnapshot<CurrencyApiSettings> configuration,
+    public CurrencyService(CurrencyApiSettings configuration,
         GetCurrency.GetCurrencyClient getCurrencyClient)
     {
         _getCurrencyClient = getCurrencyClient;
-        _apiConfiguration = configuration.Value;
+        _apiConfiguration = configuration;
     }
 
-    public async Task<Currency> GetCurrencyAsync(CurrencyType currencyCode, CancellationToken cancellationToken)
+    public async Task<Currency> GetCurrencyAsync(CurrencyTypeDTO currencyCode, CancellationToken cancellationToken)
     {
         var request = new Code
         {
@@ -72,7 +72,7 @@ public class CurrencyService : ICurrencyService
 
     public async Task<Currency> GetDefaultCurrencyAsync(CancellationToken cancellationToken)
     {
-        Enum.TryParse(_apiConfiguration.DefaultCurrency, ignoreCase: true, out CurrencyType currencyType);
+        Enum.TryParse(await _apiConfiguration.GetDefaultCurrencyAsync(cancellationToken), ignoreCase: true, out CurrencyTypeDTO currencyType);
 
         var request = new Code
         {
@@ -89,7 +89,7 @@ public class CurrencyService : ICurrencyService
         return currency;
     }
 
-    public async Task<Currency> GetCurrencyOnDateAsync(CurrencyType currencyCode, DateOnly date,
+    public async Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date,
         CancellationToken cancellationToken)
     {
         var request = new CodeAndDate
@@ -116,8 +116,8 @@ public class CurrencyService : ICurrencyService
         {
             BaseCurrency = response.BaseCurrency,
             NewRequestsAvailable = response.NewRequestsAvailable,
-            CurrencyRoundCount = _apiConfiguration.CurrencyRoundCount,
-            DefaultCurrency = _apiConfiguration.DefaultCurrency,
+            CurrencyRoundCount = await _apiConfiguration.GetCurrencyRoundCountAsync(cancellationToken),
+            DefaultCurrency = await _apiConfiguration.GetDefaultCurrencyAsync(cancellationToken),
         };
 
         return dto;

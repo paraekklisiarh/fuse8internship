@@ -1,8 +1,8 @@
-﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
+﻿using CurrencyApi;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.Mvc;
-using TestGrpc;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers;
 
@@ -60,7 +60,7 @@ public class CurrencyController : ControllerBase
     [HttpGet]
     [Route("{currencyCode}/{date}")]
     public async Task<ActionResult<CurrencyOnDateDto>> GetCurrency(
-        [FromRoute] DateOnly date, CurrencyType currencyCode, CancellationToken cancellationToken)
+        [FromRoute] DateOnly date, [FromRoute] CurrencyTypeDTO currencyCode, CancellationToken cancellationToken)
     {
         var apiDto = await _currencyService.GetCurrencyOnDateAsync(currencyCode, date, cancellationToken);
 
@@ -79,8 +79,8 @@ public class CurrencyController : ControllerBase
     /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
     [Route("{currencyCode}")]
-    public async Task<ActionResult<Currency>> GetCurrencyByCode(CancellationToken cancellationToken,
-        [FromRoute] CurrencyType currencyCode)
+    public async Task<ActionResult<Currency>> GetCurrencyByCode([FromRoute] CurrencyTypeDTO currencyCode,
+        CancellationToken cancellationToken)
     {
         var currency = await _currencyService.GetCurrencyAsync(currencyCode, cancellationToken);
 

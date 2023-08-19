@@ -4,7 +4,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-option csharp_namespace="TestGrpc";
+option csharp_namespace="CurrencyApi";
 
 package currency_api;
 
@@ -20,19 +20,19 @@ message Settings {
 }
 
 message Code {
-  CurrencyType CurrencyType=1;
+  CurrencyTypeDTO CurrencyType=1;
 }
 message CodeAndDate {
-  CurrencyType CurrencyType=1;
+  CurrencyTypeDTO CurrencyType=1;
   google.protobuf.Timestamp date=2;
 }
 
 message CurrencyDTO {
-  CurrencyType CurrencyType=1;
+  CurrencyTypeDTO CurrencyType=1;
   string value=2;
 }
 
-enum CurrencyType {
+enum CurrencyTypeDTO {
   USD=0;
   RUB=1;
   KZT=2;

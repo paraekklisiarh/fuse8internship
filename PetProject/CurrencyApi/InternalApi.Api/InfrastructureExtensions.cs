@@ -19,14 +19,15 @@ public static class InfrastructureExtensions
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
             var currentAssemblyName = typeof(AppDbContext).Assembly.FullName;
-            var dbConnectionString = configuration.GetConnectionString("InternalApi");
+            var dbConnectionString = configuration.GetConnectionString("CurrencyApi");
             options.UseNpgsql(
                 dbConnectionString,
                 b => b
                     .MigrationsAssembly(currentAssemblyName)
                     .MigrationsHistoryTable(HistoryRepository.DefaultTableName, "cur")
                     .EnableRetryOnFailure())
-                .UseSnakeCaseNamingConvention();
+                .UseSnakeCaseNamingConvention()
+                .UseAllCheckConstraints();
         });
 
         return services;

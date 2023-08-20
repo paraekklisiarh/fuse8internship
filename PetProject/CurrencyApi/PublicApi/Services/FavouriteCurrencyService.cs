@@ -96,19 +96,19 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
     }
 
     /// <inheritdoc />
-    /// <exception cref="NotUniqueFavouriteCurrency">Выбрасывается, если имя не уникально.</exception>
-    /// <exception cref="NotUniqueFavouriteCurrency">Выбрасывается, если сочетание базовой и основной валюты не уникально.</exception>
+    /// <exception cref="NotUniqueFavouriteCurrencyException">Выбрасывается, если имя не уникально.</exception>
+    /// <exception cref="NotUniqueFavouriteCurrencyException">Выбрасывается, если сочетание базовой и основной валюты не уникально.</exception>
     public async Task AddFavouriteCurrencyAsync(FavouriteCurrency newFavouriteCurrency,
         CancellationToken cancellationToken)
     {
         if (await _dbContext.FavouriteCurrencies.AnyAsync(f =>
                 f.Name == newFavouriteCurrency.Name, cancellationToken))
-            throw new NotUniqueFavouriteCurrency("Имя избранной валюты должно быть уникальным");
+            throw new NotUniqueFavouriteCurrencyException("Имя избранной валюты должно быть уникальным");
 
         if (await _dbContext.FavouriteCurrencies.AnyAsync(f =>
                 f.Currency == newFavouriteCurrency.Currency &&
                 f.BaseCurrency == newFavouriteCurrency.BaseCurrency, cancellationToken))
-            throw new NotUniqueFavouriteCurrency(
+            throw new NotUniqueFavouriteCurrencyException(
                 "Сочетание базовой валюты и основной валюты должно быть уникальным");
 
         await _dbContext.FavouriteCurrencies.AddAsync(newFavouriteCurrency, cancellationToken);
@@ -116,8 +116,9 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
     }
 
     /// <inheritdoc />
-    /// <exception cref="NotUniqueFavouriteCurrency">Выбрасывается, если имя не уникально.</exception>
-    /// <exception cref="NotUniqueFavouriteCurrency">Выбрасывается, если сочетание базовой и основной валюты не уникально.</exception>
+    /// <exception cref="FavouriteCurrencyNotFoundException">Выбрасывается, если избранное <see cref="name"/> не найдено.</exception>
+    /// <exception cref="NotUniqueFavouriteCurrencyException">Выбрасывается, если имя не уникально.</exception>
+    /// <exception cref="NotUniqueFavouriteCurrencyException">Выбрасывается, если сочетание базовой и основной валюты не уникально.</exception>
     public async Task EditFavouriteCurrencyAsync(string name, FavouriteCurrency editedFavouriteCurrency,
         CancellationToken cancellationToken)
     {
@@ -130,13 +131,13 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
         if (await _dbContext.FavouriteCurrencies.AnyAsync(f =>
                 f != entity &&
                 f.Name == editedFavouriteCurrency.Name, cancellationToken))
-            throw new NotUniqueFavouriteCurrency("Имя избранной валюты должно быть уникальным");
+            throw new NotUniqueFavouriteCurrencyException("Имя избранной валюты должно быть уникальным");
 
         if (await _dbContext.FavouriteCurrencies.AnyAsync(f =>
                 f != entity &&
                 f.Currency == editedFavouriteCurrency.Currency &&
                 f.BaseCurrency == editedFavouriteCurrency.BaseCurrency, cancellationToken))
-            throw new NotUniqueFavouriteCurrency(
+            throw new NotUniqueFavouriteCurrencyException(
                 "Сочетание базовой валюты и основной валюты избранного должно быть уникальным");
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -161,10 +162,10 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
 }
 
 /// <inheritdoc />
-public class NotUniqueFavouriteCurrency : Exception
+public class NotUniqueFavouriteCurrencyException : Exception
 {
     /// <inheritdoc />
-    public NotUniqueFavouriteCurrency(string? message) : base(message)
+    public NotUniqueFavouriteCurrencyException(string? message) : base(message)
     {
     }
 }

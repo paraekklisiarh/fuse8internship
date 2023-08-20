@@ -42,7 +42,7 @@ public class ExceptionHandlerExtensions : IAsyncExceptionFilter
                 };
                 _logger.LogCritical("Закончились токены внешнего API");
                 break;
-            case ApiSettingsAreNotSet exception:
+            case ApiSettingsAreNotSetException exception:
                 problemDetails = new ProblemDetails
                 {
                     Title = "Настройки API не установлены",
@@ -50,7 +50,7 @@ public class ExceptionHandlerExtensions : IAsyncExceptionFilter
                     Detail = exception.Message,
                 };
                 break;
-            case NotUniqueFavouriteCurrency exception:
+            case NotUniqueFavouriteCurrencyException exception:
                 problemDetails = new ProblemDetails
                 {
                     Title = "Ошибка создания/изменения избранного",

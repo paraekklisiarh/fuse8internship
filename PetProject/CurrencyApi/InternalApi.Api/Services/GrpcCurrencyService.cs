@@ -13,14 +13,14 @@ using Enum = System.Enum;
 namespace InternalApi.Services;
 
 /// <inheritdoc />
-public class GetCurrencyService : GetCurrency.GetCurrencyBase
+public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
 {
     private readonly ICachedCurrencyApi _currencyCacheService;
     private readonly CurrencyCacheSettings _currencyCacheSettings;
     private readonly ICurrencyApi _currencyApi;
 
     /// <inheritdoc />
-    public GetCurrencyService(ICachedCurrencyApi currencyCache, IOptions<CurrencyCacheSettings> cacheConfiguration,
+    public GrpcCurrencyService(ICachedCurrencyApi currencyCache, IOptions<CurrencyCacheSettings> cacheConfiguration,
         ICurrencyApi currencyApi)
     {
         _currencyCacheService = currencyCache;
@@ -115,5 +115,61 @@ public class GetCurrencyService : GetCurrency.GetCurrencyBase
         };
 
         return parsedDto;
+    }
+
+    /// <summary>
+    /// Получение текущего курса избранной валюты
+    /// </summary>
+    /// <param name="request">Запрос на получение текущего курса валюты</param>
+    /// <param name="context">Контекст запроса</param>
+    /// <returns>Текущий курс избранной валюты относительно переданной базовой</returns>
+    public override async Task<CurrencyDTO> GetFavouriteCurrencyCurrent(FavouriteCurrency request, ServerCallContext context)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        Enum.TryParse(request.BaseCurrencyType.ToString(), out CurrencyType baseCurrencyType);
+        Enum.TryParse(request.CurrencyType.ToString(), out CurrencyType currencyType);
+
+        if (baseCurrencyType == _currencyCacheSettings.BaseCurrency)
+        {
+            var currency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
+            return ParseDto(currency);
+        }
+        
+        var baseCurrency = await _currencyCacheService.GetCurrentCurrencyAsync(baseCurrencyType, context.CancellationToken);
+        var targetCurrency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
+
+        return ParseDto(currency: targetCurrency with { Value = targetCurrency.Value / baseCurrency.Value });
+    }
+
+    /// <summary>
+    /// Получение курса избранной валюты на указанную дату
+    /// </summary>
+    /// <param name="request">Запрос на получение курса валюты на указанную дату</param>
+    /// <param name="context">Контекст запроса</param>
+    /// <returns>Курс избранной валюты на указанную дату относительно переданной базовой</returns>
+    public override async Task<CurrencyDTO> GetFavouriteCurrencyOnDate(FavouriteCurrencyOnDate request, ServerCallContext context)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        Enum.TryParse(request.BaseCurrencyType.ToString(), out CurrencyType baseCurrencyType);
+        Enum.TryParse(request.CurrencyType.ToString(), out CurrencyType currencyType);
+        
+        // Парсинг даты в UTC
+        var date = request.Date.ToDateTime().ToUniversalTime();
+        if (date > DateTime.UtcNow) throw new ValidationException();
+
+        var currencyDate = DateOnly.FromDateTime(date);
+
+        if (baseCurrencyType == _currencyCacheSettings.BaseCurrency)
+        {
+            var currency = await _currencyCacheService.GetCurrencyOnDateAsync(currencyType, currencyDate, context.CancellationToken);
+            return ParseDto(currency);
+        }
+        
+        var baseCurrency = await _currencyCacheService.GetCurrencyOnDateAsync(baseCurrencyType, currencyDate, context.CancellationToken);
+        var targetCurrency = await _currencyCacheService.GetCurrencyOnDateAsync(currencyType, currencyDate, context.CancellationToken);
+
+        return ParseDto(currency: targetCurrency with { Value = targetCurrency.Value / baseCurrency.Value });
     }
 }

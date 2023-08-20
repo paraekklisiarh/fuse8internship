@@ -120,6 +120,8 @@ public class ApiService : ICurrencyApi
     /// <returns>Тело ответа в виде строки</returns>
     private async Task<string> HttpClientHelper(string url, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         // Проверка наличия свободных токенов
         if (!await IsNewRequestsAvailable(cancellationToken))
             throw new ApiRequestLimitException("Токены внешнего API закончились");

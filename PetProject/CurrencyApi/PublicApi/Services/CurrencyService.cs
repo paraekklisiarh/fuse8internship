@@ -63,6 +63,7 @@ public class CurrencyService : ICurrencyService
     /// <inheritdoc />
     public async Task<Currency> GetCurrencyAsync(CurrencyTypeDTO currencyCode, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var request = new Code
         {
             CurrencyType = currencyCode
@@ -78,6 +79,7 @@ public class CurrencyService : ICurrencyService
     /// <inheritdoc />
     public async Task<Currency> GetDefaultCurrencyAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         Enum.TryParse(await _settings.GetDefaultCurrencyAsync(cancellationToken), true,
             out CurrencyTypeDTO currencyType);
 
@@ -96,6 +98,7 @@ public class CurrencyService : ICurrencyService
     public async Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var request = new CodeAndDate
         {
             CurrencyType = currencyCode,
@@ -111,6 +114,8 @@ public class CurrencyService : ICurrencyService
     /// <inheritdoc />
     public async Task<Settings> GetCurrencyServerSettingsAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         var settings = await _getCurrencyClient.GetSettingsAsync(new Empty(), cancellationToken: cancellationToken);
 
         return settings;
@@ -125,6 +130,8 @@ public class CurrencyService : ICurrencyService
     /// <returns>Объект <see cref="Currency" /></returns>
     private async Task<Currency> ParseCurrencyDto(CurrencyDTO dto, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        
         var value = decimal.Parse(dto.Value, CultureInfo.InvariantCulture);
 
         return new Currency

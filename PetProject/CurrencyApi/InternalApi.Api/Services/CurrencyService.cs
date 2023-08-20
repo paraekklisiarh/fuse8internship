@@ -8,26 +8,23 @@ namespace InternalApi.Services;
 public class CurrencyService : ICurrencyService
 {
     /// <inheritdoc />
-    public Task<Currency> GetCurrency(string currencyCode)
+    public async Task<Currency> GetCurrency(string currencyCode, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         throw new NotImplementedException();
     }
 
     /// <inheritdoc />
-    public Task<Currency> GetDefaultCurrency()
+    public async Task<Currency> GetCurrencyOnDate(string currencyCode, string date, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         throw new NotImplementedException();
     }
 
     /// <inheritdoc />
-    public Task<Currency> GetCurrencyOnDate(string currencyCode, string date)
+    public async Task<Settings> GetSettings(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
-    }
-
-    /// <inheritdoc />
-    public Task<Settings> GetSettings()
-    {
+        cancellationToken.ThrowIfCancellationRequested();
         throw new NotImplementedException();
     }
 }

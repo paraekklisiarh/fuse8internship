@@ -1,4 +1,4 @@
-﻿using InternalApi.Contracts;
+using InternalApi.Contracts;
 using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
@@ -172,6 +172,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
                 if (_cacheUpdateLock.RenewalDatesLockDictionary.TryAdd(updatingDate, updateMutex))
                 {
                     await updateMutex.WaitAsync(cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
                         await UpdateCacheAsync(targetDate, cancellationToken);
@@ -188,6 +189,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
                 updateMutex = _cacheUpdateLock.RenewalDatesLockDictionary
                     .GetOrAdd(updatingDate, new SemaphoreSlim(1, 1));
                 await updateMutex.WaitAsync(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
                     // За время ожидания могло произойти обновление данных из API.

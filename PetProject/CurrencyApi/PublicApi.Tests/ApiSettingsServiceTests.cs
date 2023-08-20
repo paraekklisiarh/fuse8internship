@@ -5,13 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace PublicApi.Tests;
 
-public class ApiSettingsServiceTests
+public class ApiSettingsServiceTests : IDisposable
 {
     private readonly AppDbContext _mockDbContext;
-    private readonly CurrencyApiSettings _apiSettingsMock;
-
-    private readonly ApiSettingsService _sut;
-
+    private readonly IApiSettingsService  _sut;
+    
     public ApiSettingsServiceTests()
     {
         var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
@@ -19,31 +17,12 @@ public class ApiSettingsServiceTests
             .Options;
         _mockDbContext = new AppDbContext(dbOptions);
 
-        _apiSettingsMock = new CurrencyApiSettings(_mockDbContext);
-        
-        _sut = new ApiSettingsService(_apiSettingsMock);
+        _sut = new ApiSettingsService(_mockDbContext);
     }
 
     public void Dispose()
     {
         _mockDbContext.Dispose();
-    }
-
-    [Fact]
-    public async Task DefaultCurrencySetAsync_SetValueSuccessfully()
-    {
-        // Arrange
-        var ct = CancellationToken.None;
-        var code = "RUB";
-
-        // Act
-        await _sut.DefaultCurrencySetAsync(code, ct);
-
-        var actual = await _apiSettingsMock.GetDefaultCurrencyAsync(ct);
-        
-        // Assert
-        
-        Assert.Equal(code, actual);
     }
 
     [Fact]
@@ -58,19 +37,65 @@ public class ApiSettingsServiceTests
     }
 
     [Fact]
-    public async Task RoundCountSetAsync_SetValueSuccessfully()
+    public async Task ApiSettingsService_ReturnSettings()
     {
         // Arrange
         var ct = CancellationToken.None;
-        var count = 10;
-
+        var settings = new CurrencyApiSetting
+        {
+            Id = 0,
+            DefaultCurrency = "RUB",
+            CurrencyRoundCount = 10
+        };
+        await _mockDbContext.CurrencyApiSettings.AddAsync(settings, ct);
+        await _mockDbContext.SaveChangesAsync(ct);
+        
         // Act
-        await _sut.RoundCountSetAsync(count, ct);
+        var defaultCurrency = await _sut.GetDefaultCurrencyAsync(ct);
+        var currencyRoundCount = await _sut.GetCurrencyRoundCountAsync(ct);
+        
+        // 
+        // Assert
+        
+        Assert.Equal(settings.DefaultCurrency, defaultCurrency);
+        Assert.Equal(settings.CurrencyRoundCount, currencyRoundCount);
+    }
 
-        var actual = await _apiSettingsMock.GetCurrencyRoundCountAsync(ct);
+    [Fact]
+    public async Task ApiSettingsService_SetSettingsSuccessfully()
+    {
+        // Arrange
+        var ct = CancellationToken.None;
+        var settings = new CurrencyApiSetting
+        {
+            Id = 0,
+            DefaultCurrency = "RUB",
+            CurrencyRoundCount = 10
+        };
+        await _mockDbContext.CurrencyApiSettings.AddAsync(settings, ct);
+        await _mockDbContext.SaveChangesAsync(ct);
+        
+        var newDefaultCurrency = "USD";
+        var newCount = 20;
+        
+        // Act 
+        
+        await _sut.DefaultCurrencySetAsync(newDefaultCurrency, ct);
+        await _sut.RoundCountSetAsync(newCount, ct);
         
         // Assert
         
-        Assert.Equal(count, actual);
+        Assert.Equal(newCount, _mockDbContext.CurrencyApiSettings.FirstOrDefault()!.CurrencyRoundCount);
+        Assert.Equal(newDefaultCurrency, _mockDbContext.CurrencyApiSettings.FirstOrDefault()!.DefaultCurrency);
+    }
+
+    [Fact]
+    public async Task ApiSettingsService_ThrowException_WhenSettingsNotExistInDb()
+    {
+        // Arrange
+        var ct = CancellationToken.None;
+        
+        await Assert.ThrowsAsync<ApiSettingsAreNotSetException>( () => _sut.GetDefaultCurrencyAsync(ct) );
+        await Assert.ThrowsAsync<ApiSettingsAreNotSetException>( () => _sut.GetCurrencyRoundCountAsync(ct) );
     }
 }

@@ -1,11 +1,14 @@
+﻿using System.Globalization;
 using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Google.Protobuf.WellKnownTypes;
 using Enum = System.Enum;
 
-
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 
+/// <summary>
+///     Курсы валют
+/// </summary>
 public interface ICurrencyService
 {
     /// <summary>
@@ -64,14 +67,10 @@ public class CurrencyService : ICurrencyService
         {
             CurrencyType = currencyCode
         };
-        
+
         var dto = await _getCurrencyClient.GetCurrencyAsync(request, cancellationToken: cancellationToken);
-        
-        var currency = new Currency
-        {
-            Code = dto.CurrencyType.ToString().ToUpper(),
-            Value = decimal.Parse(dto.Value.Replace('.', ','))
-        };
+
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
 
         return currency;
     }
@@ -88,15 +87,12 @@ public class CurrencyService : ICurrencyService
         };
         var dto = await _getCurrencyClient.GetCurrencyAsync(request, cancellationToken: cancellationToken);
 
-        var currency = new Currency
-        {
-            Code = dto.CurrencyType.ToString().ToUpper(),
-            Value = decimal.Parse(dto.Value.Replace('.', ','))
-        };
-        
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
+
         return currency;
     }
 
+    /// <inheritdoc />
     public async Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date,
         CancellationToken cancellationToken)
     {
@@ -106,9 +102,12 @@ public class CurrencyService : ICurrencyService
             Date = date.ToDateTime(new TimeOnly()).ToUniversalTime().ToTimestamp()
         };
         var dto = await _getCurrencyClient.GetCurrencyOnDateAsync(request, cancellationToken: cancellationToken);
-        
-        var currency = new Currency
-        {
+
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
+
+        return currency;
+    }
+
     /// <inheritdoc />
     public async Task<Settings> GetCurrencyServerSettingsAsync(CancellationToken cancellationToken)
     {
@@ -118,17 +117,20 @@ public class CurrencyService : ICurrencyService
     }
 
     // ToDo: Этот метод дублирует такой же в FavouriteCurrencyService. Выделить в отдельный сервис?
+    /// <summary>
+    ///     Парсинг Dto
+    /// </summary>
+    /// <param name="dto">Currency Dto</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Объект <see cref="Currency" /></returns>
+    private async Task<Currency> ParseCurrencyDto(CurrencyDTO dto, CancellationToken cancellationToken)
     {
-        var response = await _getCurrencyClient.GetSettingsAsync(new Empty(), cancellationToken: cancellationToken);
+        var value = decimal.Parse(dto.Value, CultureInfo.InvariantCulture);
 
-        var dto = new SettingsDto
+        return new Currency
         {
-            BaseCurrency = response.BaseCurrency,
-            NewRequestsAvailable = response.NewRequestsAvailable,
-            CurrencyRoundCount = await _apiConfiguration.GetCurrencyRoundCountAsync(cancellationToken),
-            DefaultCurrency = await _apiConfiguration.GetDefaultCurrencyAsync(cancellationToken),
+            Code = dto.CurrencyType.ToString().ToUpper(),
+            Value = Math.Round(value, await _settings.GetCurrencyRoundCountAsync(cancellationToken))
         };
-
-        return dto;
     }
 }

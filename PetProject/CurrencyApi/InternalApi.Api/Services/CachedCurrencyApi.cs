@@ -82,7 +82,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
 
         _logger.LogInformation("Получение из кеша курса валюты {CurrencyType} на {RateDate}", currencyType, date);
 
-        var currency = await GetEntityAsync(currencyType, null, cancellationToken);
+        var currency = await GetEntityAsync(currencyType, date, cancellationToken);
 
         if (currency is not null) return currency;
 
@@ -96,7 +96,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
         // repeat get
         _logger.LogInformation("Получение из кеша курса валюты {CurrencyType} на {RateDate}", currencyType, date);
 
-        currency = await GetEntityAsync(currencyType, null, cancellationToken);
+        currency = await GetEntityAsync(currencyType, date, cancellationToken);
 
         if (currency is not null) return currency;
 
@@ -129,7 +129,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
                 .FirstOrDefaultAsync(cancellationToken)
             : await _dbContext.Currencies
                 .Where(c => c.Code == currencyType &&
-                            c.RateDate.Date == targetDate.Value.ToDateTime(new TimeOnly(0)).Date)
+                            c.RateDate.Date == targetDate.Value.ToDateTime(new TimeOnly()).Date)
                 .OrderByDescending(c => c.RateDate)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -162,8 +162,8 @@ public class CachedCurrencyApi : ICachedCurrencyApi
 
         // Дата, на которую обновляется кеш
         var updatingDate = targetDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        SemaphoreSlim updateMutex = new(1,1);
-         try
+        SemaphoreSlim updateMutex = new(1, 1);
+        try
         {
             // Если сейчас не обновляется кеш на искомую дату, обновить.
             if (!_cacheUpdateLock.RenewalDatesLockDictionary.ContainsKey(updatingDate))

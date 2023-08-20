@@ -4,6 +4,7 @@ using Audit.Http;
 using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
+using Grpc.Health.V1;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -85,9 +86,20 @@ public class Startup
                 .IncludeResponseBody()
                 .IncludeContentHeaders()
             );
-
-        // Регистрирую настройки внешнего API
-        services.AddScoped(typeof(CurrencyApiSettings));
+        // grpc health check client
+        services.AddGrpcClient<Health.HealthClient>(o =>
+        {
+            var uriString = _configuration.GetValue<string>("ExternalApis:CurrencyAPI:BaseUrl");
+            if (uriString != null)
+                o.Address = new Uri(uriString);
+        })
+            .AddAuditHandler(audit => audit
+                .IncludeRequestHeaders()
+                .IncludeRequestBody()
+                .IncludeResponseHeaders()
+                .IncludeResponseBody()
+                .IncludeContentHeaders()
+            );
         
         // Our services register
         services.AddTransient<ICurrencyService, CurrencyService>();

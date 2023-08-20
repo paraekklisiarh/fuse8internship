@@ -1,8 +1,6 @@
-﻿using CurrencyApi;
-using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
+using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Google.Protobuf.WellKnownTypes;
-using Microsoft.Extensions.Options;
 using Enum = System.Enum;
 
 
@@ -31,27 +29,35 @@ public interface ICurrencyService
     /// <param name="date">Дата, курс на которую нужно получить, формата YYYY-MM-DD</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Объект <see cref="Currency" /></returns>
-    public Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date, CancellationToken cancellationToken);
+    public Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date,
+        CancellationToken cancellationToken);
 
     /// <summary>
-    ///     Получение текущих настроек API
+    ///     Возвращает настройки grpc-сервера
     /// </summary>
-    /// <returns>Объект <see cref="SettingsDto" />, содержащий актуальные настройки API</returns>
-    public Task<SettingsDto> GetSettingsAsync(CancellationToken cancellationToken);
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Настройки grpc-сервера</returns>
+    public Task<Settings> GetCurrencyServerSettingsAsync(CancellationToken cancellationToken);
 }
 
+/// <inheritdoc />
 public class CurrencyService : ICurrencyService
 {
-    private readonly CurrencyApiSettings _apiConfiguration;
     private readonly GetCurrency.GetCurrencyClient _getCurrencyClient;
+    private readonly IApiSettingsService _settings;
 
-    public CurrencyService(CurrencyApiSettings configuration,
-        GetCurrency.GetCurrencyClient getCurrencyClient)
+    /// <summary>
+    ///     Курсы валют
+    /// </summary>
+    /// <param name="getCurrencyClient">gRPC клиент</param>
+    /// <param name="settings">Настройки Api</param>
+    public CurrencyService(GetCurrency.GetCurrencyClient getCurrencyClient, IApiSettingsService settings)
     {
         _getCurrencyClient = getCurrencyClient;
-        _apiConfiguration = configuration;
+        _settings = settings;
     }
 
+    /// <inheritdoc />
     public async Task<Currency> GetCurrencyAsync(CurrencyTypeDTO currencyCode, CancellationToken cancellationToken)
     {
         var request = new Code
@@ -70,9 +76,11 @@ public class CurrencyService : ICurrencyService
         return currency;
     }
 
+    /// <inheritdoc />
     public async Task<Currency> GetDefaultCurrencyAsync(CancellationToken cancellationToken)
     {
-        Enum.TryParse(await _apiConfiguration.GetDefaultCurrencyAsync(cancellationToken), ignoreCase: true, out CurrencyTypeDTO currencyType);
+        Enum.TryParse(await _settings.GetDefaultCurrencyAsync(cancellationToken), true,
+            out CurrencyTypeDTO currencyType);
 
         var request = new Code
         {
@@ -101,14 +109,15 @@ public class CurrencyService : ICurrencyService
         
         var currency = new Currency
         {
-            Code = dto.CurrencyType.ToString().ToUpper(),
-            Value = decimal.Parse(dto.Value.Replace('.', ','))
-        };
+    /// <inheritdoc />
+    public async Task<Settings> GetCurrencyServerSettingsAsync(CancellationToken cancellationToken)
+    {
+        var settings = await _getCurrencyClient.GetSettingsAsync(new Empty(), cancellationToken: cancellationToken);
 
-        return currency;
+        return settings;
     }
 
-    public async Task<SettingsDto> GetSettingsAsync(CancellationToken cancellationToken)
+    // ToDo: Этот метод дублирует такой же в FavouriteCurrencyService. Выделить в отдельный сервис?
     {
         var response = await _getCurrencyClient.GetSettingsAsync(new Empty(), cancellationToken: cancellationToken);
 

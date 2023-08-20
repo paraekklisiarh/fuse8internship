@@ -1,4 +1,4 @@
-﻿using CurrencyApi;
+using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
@@ -15,23 +15,10 @@ public class CurrencyController : ControllerBase
 {
     private readonly ICurrencyService _currencyService;
 
+    /// <inheritdoc />
     public CurrencyController(ICurrencyService currencyService)
     {
         _currencyService = currencyService;
-    }
-
-    /// <summary>
-    ///     Текущие настройки приложения
-    /// </summary>
-    /// <param name="cancellationToken">Токен отмены</param>
-    /// <response code="200">Возвращает, если настройки успешно получены.</response>
-    [Route("settings")]
-    [HttpGet]
-    public async Task<ActionResult<SettingsDto>> GetSettings(CancellationToken cancellationToken)
-    {
-        var response = await _currencyService.GetSettingsAsync(cancellationToken);
-
-        return Ok(response);
     }
 
     /// <summary>

@@ -92,6 +92,7 @@ public class Startup
         // Our services register
         services.AddTransient<ICurrencyService, CurrencyService>();
         services.AddTransient<IFavouriteCurrencyService, FavouriteCurrencyService>();
+        // настройки внешнего API
         services.AddTransient<IApiSettingsService, ApiSettingsService>();
     }
 

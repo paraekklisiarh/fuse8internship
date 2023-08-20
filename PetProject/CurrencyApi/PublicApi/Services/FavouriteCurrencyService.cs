@@ -1,4 +1,4 @@
-﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
@@ -56,14 +56,20 @@ public interface IFavouriteCurrencyService
 public class FavouriteCurrencyService : IFavouriteCurrencyService
 {
     private readonly AppDbContext _dbContext;
+    private readonly GetCurrency.GetCurrencyClient _getCurrency;
+    private readonly IApiSettingsService _settings;
 
     /// <summary>
     ///     Конструктор сервиса
     /// </summary>
     /// <param name="dbContext">БД</param>
-    public FavouriteCurrencyService(AppDbContext dbContext)
+    /// <param name="getCurrency">gRPC клиент</param>
+    /// <param name="settings">Настройки API</param>
+    public FavouriteCurrencyService(AppDbContext dbContext, GetCurrency.GetCurrencyClient getCurrency, IApiSettingsService settings)
     {
         _dbContext = dbContext;
+        _getCurrency = getCurrency;
+        _settings = settings;
     }
 
     /// <inheritdoc />

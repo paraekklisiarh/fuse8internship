@@ -1,4 +1,4 @@
-using InternalApi.Entities;
+﻿using InternalApi.Entities;
 using CurrencyApi;
 
 namespace InternalApi.Contracts;

@@ -1,4 +1,4 @@
-using InternalApi.Contracts;
+﻿using InternalApi.Contracts;
 using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
@@ -147,7 +147,9 @@ public class CachedCurrencyApi : ICachedCurrencyApi
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        /*await UpdateSemaphore.WaitAsync(cancellationToken);
+        /*
+         // Создаст слишком узкое место: получение курса валют на любую дату будет происходить только в одном потоке.
+         await UpdateSemaphore.WaitAsync(cancellationToken);
         try
         {
             // За время ожидания могло произойти обновление данных из API.
@@ -233,7 +235,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
         var entities = ParseEntity(apiDto);
 
         // Save new entities
-        await SaveEntities(entities, cancellationToken);
+        await SaveEntities(entities);
     }
 
     /// <summary>
@@ -241,7 +243,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
     /// </summary>
     /// <param name="apiDto">DTO от внешнего API</param>
     /// <returns></returns>
-    internal IEnumerable<Currency> ParseEntity(RootCurrencyApiDto apiDto)
+    internal IEnumerable<Currency?> ParseEntity(RootCurrencyApiDto apiDto)
     {
         if (apiDto.Data == null) return new List<Currency>();
 
@@ -258,12 +260,16 @@ public class CachedCurrencyApi : ICachedCurrencyApi
     /// <summary>
     ///     Сохранение сущностей в базу данных
     /// </summary>
-    /// <param name="currencies">Перечисление сущностей, которые должны быть сохранены</param>
-    /// <param name="cancellationToken">Токен отмены</param>
-    internal async Task SaveEntities(IEnumerable<Currency> currencies, CancellationToken cancellationToken)
+    /// <param name="enumerable">Перечисление сущностей, которые должны быть сохранены</param>
+    /// <remarks>
+    ///     Не передаю в метод CancellationToken потому, что уже полученные со внешнего API данные следует сохранить,
+    ///     чтобы не потерять токен впустую
+    /// </remarks>
+    internal async Task SaveEntities(IEnumerable<Currency?> enumerable)
     {
-        await _dbContext.Currencies.AddRangeAsync(currencies, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        var currencies = enumerable.Where(c => c != null).Cast<Currency>().ToList();
+        await _dbContext.Currencies.AddRangeAsync(currencies);
+        await _dbContext.SaveChangesAsync();
     }
 }
 

@@ -33,7 +33,7 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
     /// </summary>
     /// <param name="request">Запрос на получение курса валюты</param>
     /// <param name="context">Контекст запроса</param>
-    /// <returns>Объект <see cref="CurrencyDTO" />, содержащий информацию о курсе валюты на указанную дату.</returns>
+    /// <returns>Объект <see cref="CurrencyDTO" />, содержащий информацию о текущем курсе валюты.</returns>
     /// <exception cref="OperationCanceledException">Выбрасывается, если операция была отменена.</exception>
     public override async Task<CurrencyDTO> GetCurrency(Code request, ServerCallContext context)
     {

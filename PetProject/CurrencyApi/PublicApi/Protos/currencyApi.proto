@@ -12,6 +12,20 @@ service GetCurrency {
   rpc GetCurrency (Code) returns (CurrencyDTO);
   rpc GetCurrencyOnDate (CodeAndDate) returns (CurrencyDTO);
   rpc GetSettings (google.protobuf.Empty) returns (Settings);
+  
+  rpc GetFavouriteCurrencyCurrent (FavouriteCurrency) returns (CurrencyDTO);
+  rpc GetFavouriteCurrencyOnDate (FavouriteCurrencyOnDate) returns (CurrencyDTO);
+}
+
+message FavouriteCurrency {
+  CurrencyTypeDTO CurrencyType = 1;
+  CurrencyTypeDTO BaseCurrencyType = 2;
+}
+
+message FavouriteCurrencyOnDate {
+  CurrencyTypeDTO CurrencyType = 1;
+  CurrencyTypeDTO BaseCurrencyType = 2;
+  google.protobuf.Timestamp Date = 3;
 }
 
 message Settings {

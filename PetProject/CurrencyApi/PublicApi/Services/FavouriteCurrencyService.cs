@@ -1,5 +1,10 @@
+﻿using System.Globalization;
+using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
+using Enum = System.Enum;
+using FavouriteCurrency = Fuse8_ByteMinds.SummerSchool.PublicApi.Models.FavouriteCurrency;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 
@@ -50,6 +55,26 @@ public interface IFavouriteCurrencyService
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>true, если успешно, иначе false</returns>
     public Task DeleteFavouriteCurrencyAsync(string name, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Получение текущего курса Избранного по его названию
+    /// </summary>
+    /// <param name="name">Название элемента избранного</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Текущий курс валюты элемента избранного</returns>
+    public Task<Currency> GetFavouriteCurrencyCurrentAsync(string name, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Получение курса Избранного по его названию на конкретную дату
+    /// </summary>
+    /// <param name="name">Название элемента избранного</param>
+    /// <param name="targetDate">Дата курса валюты</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Курс валюты элемента избранного на <see cref="targetDate"/></returns>
+    public Task<Currency> GetFavouriteCurrencyOnDateAsync(string name, DateOnly targetDate,
+        CancellationToken cancellationToken);
+    
+    
 }
 
 /// <inheritdoc />
@@ -73,6 +98,7 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
     }
 
     /// <inheritdoc />
+    /// <exception cref="FavouriteCurrencyNotFoundException">Выбрасывается, если избранное <see cref="name"/> не найдено.</exception>
     public async Task<FavouriteCurrency> GetFavouriteCurrencyAsync(string name, CancellationToken cancellationToken)
     {
         var response = await _dbContext
@@ -158,6 +184,63 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
 
         _dbContext.FavouriteCurrencies.Remove(favouriteCurrency);
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Currency> GetFavouriteCurrencyCurrentAsync(string name, CancellationToken cancellationToken)
+    {
+        var entity = await GetFavouriteCurrencyAsync(name, cancellationToken);
+
+        Enum.TryParse(entity.Currency, out CurrencyTypeDTO currencyType);
+        Enum.TryParse(entity.BaseCurrency, out CurrencyTypeDTO baseCurrencyType);
+        CurrencyApi.FavouriteCurrency request = new()
+        {
+            CurrencyType = currencyType,
+            BaseCurrencyType = baseCurrencyType
+        };
+        var dto = await _getCurrency.GetFavouriteCurrencyCurrentAsync(request: request, cancellationToken: cancellationToken);
+
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
+
+        return currency;
+    }
+
+    /// <inheritdoc />
+    public async Task<Currency> GetFavouriteCurrencyOnDateAsync(string name, DateOnly targetDate, CancellationToken cancellationToken)
+    {
+        var entity = await GetFavouriteCurrencyAsync(name, cancellationToken);
+
+        Enum.TryParse(entity.Currency, out CurrencyTypeDTO currencyType);
+        Enum.TryParse(entity.BaseCurrency, out CurrencyTypeDTO baseCurrencyType);
+        
+        CurrencyApi.FavouriteCurrencyOnDate request = new()
+        {
+            CurrencyType = currencyType,
+            BaseCurrencyType = baseCurrencyType,
+            Date = targetDate.ToDateTime(new TimeOnly()).ToUniversalTime().ToTimestamp()
+        };
+        var dto = await _getCurrency.GetFavouriteCurrencyOnDateAsync(request: request, cancellationToken: cancellationToken);
+
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
+
+        return currency;
+    }
+    
+    /// <summary>
+    /// Парсинг Dto
+    /// </summary>
+    /// <param name="dto">Currency Dto</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Объект <see cref="Currency"/></returns>
+    private async Task<Currency> ParseCurrencyDto(CurrencyDTO dto, CancellationToken cancellationToken)
+    {
+        var value = decimal.Parse(dto.Value, CultureInfo.InvariantCulture);
+        
+        return new Currency
+        {
+            Code = dto.CurrencyType.ToString().ToUpper(),
+            Value = Math.Round(value, await _settings.GetCurrencyRoundCountAsync(cancellationToken))
+        };
     }
 }
 

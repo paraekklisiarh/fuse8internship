@@ -1,7 +1,12 @@
-﻿using Fuse8_ByteMinds.SummerSchool.PublicApi;
+﻿using System.Globalization;
+using CurrencyApi;
+using Fuse8_ByteMinds.SummerSchool.PublicApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using FavouriteCurrency = Fuse8_ByteMinds.SummerSchool.PublicApi.Models.FavouriteCurrency;
 
 namespace PublicApi.Tests;
 
@@ -10,13 +15,28 @@ public class FavouriteCurrencyTests : IDisposable
     private readonly IFavouriteCurrencyService _sut;
     private readonly AppDbContext _mockDbContext;
 
+    private CurrencyApiSetting _setting = new()
+    {
+        DefaultCurrency = "RUB",
+        CurrencyRoundCount = 2
+    };
+
+    private readonly Mock<IApiSettingsService> _currencyApiSettingsMock = new();
+    private readonly Mock<GetCurrency.GetCurrencyClient> _getCurrencyClientMock = new();
+
     public FavouriteCurrencyTests()
     {
+        _currencyApiSettingsMock.Setup(m => m.GetDefaultCurrencyAsync(It.IsAny<CancellationToken>()))
+            .Returns(async () => _setting.DefaultCurrency);
+        _currencyApiSettingsMock.Setup(m => m.GetCurrencyRoundCountAsync(It.IsAny<CancellationToken>()))
+            .Returns(async () => (int)_setting.CurrencyRoundCount!);
+
         var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _mockDbContext = new AppDbContext(dbOptions);
-        _sut = new FavouriteCurrencyService(_mockDbContext);
+        _sut = new FavouriteCurrencyService(_mockDbContext, _getCurrencyClientMock.Object,
+            _currencyApiSettingsMock.Object);
     }
 
     public void Dispose()
@@ -102,7 +122,7 @@ public class FavouriteCurrencyTests : IDisposable
         var newEntity = new FavouriteCurrency(name, "NC", "NBC");
 
         // Act and Assert
-        await Assert.ThrowsAsync<NotUniqueFavouriteCurrency>(
+        await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(
             () => _sut.AddFavouriteCurrencyAsync(newEntity, ct));
     }
 
@@ -121,7 +141,7 @@ public class FavouriteCurrencyTests : IDisposable
         var uniqEntity = new FavouriteCurrency("NewName", "NC", "BC");
 
         // Act and Assert
-        await Assert.ThrowsAsync<NotUniqueFavouriteCurrency>(() =>
+        await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(() =>
             _sut.AddFavouriteCurrencyAsync(nonUniqEntity, ct));
 
         // Только сочетание Валюта+Базовая валюта должно быть уникально.
@@ -163,7 +183,7 @@ public class FavouriteCurrencyTests : IDisposable
         var editedEntity = new FavouriteCurrency(newName, "NC", "NBC");
 
         // Act and Assert
-        await Assert.ThrowsAsync<NotUniqueFavouriteCurrency>(() =>
+        await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(() =>
             _sut.EditFavouriteCurrencyAsync(name, editedEntity, ct));
     }
 
@@ -185,7 +205,7 @@ public class FavouriteCurrencyTests : IDisposable
         var editedEntity = new FavouriteCurrency(newName, "NC", "NBC");
 
         // Act and Assert
-        await Assert.ThrowsAsync<NotUniqueFavouriteCurrency>(() =>
+        await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(() =>
             _sut.EditFavouriteCurrencyAsync(name, editedEntity, ct));
     }
 
@@ -261,5 +281,84 @@ public class FavouriteCurrencyTests : IDisposable
         // Act and assert
 
         await Assert.ThrowsAsync<FavouriteCurrencyNotFoundException>(() => _sut.DeleteFavouriteCurrencyAsync(name, ct));
+    }
+
+    [Fact]
+    public async Task GetFavouriteCurrencyCurrent_ReturnCurrency_AndItIsRounded()
+    {
+        // Arrange
+        var ct = CancellationToken.None;
+        var name = "RubToUsd";
+        var currency = "RUB";
+        decimal value = 100.99999999m;
+        var roundCount = 2;
+
+        var entity = new FavouriteCurrency(name, "Rub", "Usd");
+        _mockDbContext.FavouriteCurrencies.Add(entity);
+        await _mockDbContext.SaveChangesAsync(ct);
+
+        _currencyApiSettingsMock.Setup(s => s.GetCurrencyRoundCountAsync(ct))
+            .ReturnsAsync(roundCount);
+
+        var dto = new CurrencyDTO
+        {
+            CurrencyType = CurrencyTypeDTO.Rub,
+            Value = value.ToString(CultureInfo.InvariantCulture)
+        };
+        var grpcResponse = new AsyncUnaryCall<CurrencyDTO>(Task.FromResult(dto), Task.FromResult(new Metadata()),
+            () => Status.DefaultSuccess, () => new Metadata(), () => { });
+
+        _getCurrencyClientMock.Setup(g => g.GetFavouriteCurrencyCurrentAsync(It.IsAny<CurrencyApi.FavouriteCurrency>(),
+                It.IsAny<Metadata>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Returns(grpcResponse);
+
+        // Act
+
+        var actual = await _sut.GetFavouriteCurrencyCurrentAsync(name, ct);
+
+        // Assert
+
+        Assert.Equal(Math.Round(value, roundCount), actual.Value);
+        Assert.Equal(currency, actual.Code);
+    }
+    
+    [Fact]
+    public async Task GetFavouriteCurrencyOnDate_ReturnCurrency_AndItIsRounded()
+    {
+        // Arrange
+        var ct = CancellationToken.None;
+        var name = "RubToUsd";
+        var currency = "RUB";
+        decimal value = 100.99999999m;
+        var roundCount = 2;
+        var targetDate = DateOnly.Parse("2000-02-02");
+
+        var entity = new FavouriteCurrency(name, "Rub", "Usd");
+        _mockDbContext.FavouriteCurrencies.Add(entity);
+        await _mockDbContext.SaveChangesAsync(ct);
+
+        _currencyApiSettingsMock.Setup(s => s.GetCurrencyRoundCountAsync(ct))
+            .ReturnsAsync(roundCount);
+
+        var dto = new CurrencyDTO
+        {
+            CurrencyType = CurrencyTypeDTO.Rub,
+            Value = value.ToString(CultureInfo.InvariantCulture)
+        };
+        var grpcResponse = new AsyncUnaryCall<CurrencyDTO>(Task.FromResult(dto), Task.FromResult(new Metadata()),
+            () => Status.DefaultSuccess, () => new Metadata(), () => { });
+
+        _getCurrencyClientMock.Setup(g => g.GetFavouriteCurrencyOnDateAsync(It.IsAny<CurrencyApi.FavouriteCurrencyOnDate>(),
+                It.IsAny<Metadata>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
+            .Returns(grpcResponse);
+
+        // Act
+
+        var actual = await _sut.GetFavouriteCurrencyOnDateAsync(name, targetDate, ct);
+
+        // Assert
+
+        Assert.Equal(Math.Round(value, roundCount), actual.Value);
+        Assert.Equal(currency, actual.Code);
     }
 }

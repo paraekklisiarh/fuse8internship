@@ -11,13 +11,6 @@ public class FavouriteCurrency
     /// <summary>
     /// Класс FavouriteCurrency представляет избранную валюту
     /// </summary>
-    public FavouriteCurrency()
-    {
-    }
-
-    /// <summary>
-    /// Класс FavouriteCurrency представляет избранную валюту
-    /// </summary>
     /// <param name="name">Имя избранной валюты.</param>
     /// <param name="currency">Код валюты.</param>
     /// <param name="baseCurrency">Код базовой валюты.</param>

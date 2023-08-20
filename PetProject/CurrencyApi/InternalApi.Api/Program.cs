@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
@@ -8,8 +9,9 @@ using InternalApi.Entities;
 using InternalApi.Infrastructure;
 using InternalApi.Services;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 using Polly;
 using Polly.Extensions.Http;
@@ -21,6 +23,21 @@ var builder = WebApplication.CreateBuilder();
 //// Accessing IConfiguration and IWebHostEnvironment from the builder
 IConfiguration configuration = builder.Configuration;
 var env = builder.Environment;
+
+//// Kestrel
+builder.WebHost.UseKestrel((context, options) =>
+{
+    var grpcPort = configuration.GetValue<int>("GrpcPort");
+    
+    options.Listen(IPAddress.Loopback, 5050, cfg =>
+    {
+        cfg.Protocols = HttpProtocols.Http1;
+    });
+    options.Listen(IPAddress.Loopback, grpcPort, cfg =>
+    {
+        cfg.Protocols = HttpProtocols.Http2;
+    });
+});
 
 //// Services
 var services = builder.Services;
@@ -45,7 +62,10 @@ services.AddSerilog(c => c
     .ReadFrom.Configuration(configuration));
 
 // Логирование входящих запросов
-services.AddHttpLogging(logging => { logging.LoggingFields = HttpLoggingFields.RequestPath | HttpLoggingFields.RequestMethod; });
+services.AddHttpLogging(logging =>
+{
+    logging.LoggingFields = HttpLoggingFields.RequestPath | HttpLoggingFields.RequestMethod;
+});
 
 // Audit logging
 Configuration.Setup()
@@ -59,8 +79,10 @@ services.AddControllers(o =>
 //// gRPC
 services.AddGrpc()
     // Обработчик исключений в RPC-exceptions
-    .AddServiceOptions<GetCurrencyService>(options => options.Interceptors.Add<ExceptionInterceptor>());
+    .AddServiceOptions<GrpcCurrencyService>(options => options.Interceptors.Add<ExceptionInterceptor>());
 services.AddGrpcReflection();
+services.AddGrpcHealthChecks()
+    .AddCheck("Sample", () => HealthCheckResult.Healthy());
 
 //// HttpClient
 // Пусть HttpClient`ами управляет умная часть приложения
@@ -117,18 +139,23 @@ if (env.IsDevelopment())
     app.MapGrpcReflectionService();
 }
 
+// gRPC port
 app.UseWhen(
     predicate: c => c.Connection.LocalPort == configuration.GetValue<int>("GrpcPort"),
     configuration: grpcBuilder =>
     {
-        grpcBuilder.UseRouting().UseEndpoints(e => e.MapGrpcService<GetCurrencyService>());
+        grpcBuilder.UseRouting();
+        grpcBuilder.UseEndpoints(e =>
+        {
+            e.MapGrpcService<GrpcCurrencyService>();
+            e.MapGrpcHealthChecksService();
+        });
     });
-app.UseWhen(
-    predicate: c => c.Connection.LocalPort != configuration.GetValue<int>("GrpcPort"),
-    configuration: grpcBuilder =>
-    {
-        grpcBuilder.UseRouting().UseEndpoints(e => e.MapControllers());
-    });
+
+// REST
+app.UseRouting();
+app.MapControllers();
+
 
 // RUN!
 await app.RunAsync();

@@ -1,9 +1,11 @@
 using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
+using AutoMapper;
 using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Services.Mapper;
 using Grpc.Health.V1;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
@@ -106,6 +108,9 @@ public class Startup
         services.AddTransient<IFavouriteCurrencyService, FavouriteCurrencyService>();
         // настройки внешнего API
         services.AddTransient<IApiSettingsService, ApiSettingsService>();
+        
+        //// AutoMapper
+        services.AddAutoMapper(typeof(ApplicationProfile));
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

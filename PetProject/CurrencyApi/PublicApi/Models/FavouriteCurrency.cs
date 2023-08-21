@@ -8,21 +8,8 @@ namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 /// <summary>
 /// Избранная валюта
 /// </summary>
-public class FavouriteCurrency : IMapFrom<FavouriteCurrencyDto>
+public class FavouriteCurrency : IMapFrom<FavouriteCurrencyDto>, IMapTo<FavouriteCurrencyDto>
 {
-    /// <summary>
-    /// Класс FavouriteCurrency представляет избранную валюту
-    /// </summary>
-    /// <param name="name">Имя избранной валюты.</param>
-    /// <param name="currency">Код валюты.</param>
-    /// <param name="baseCurrency">Код базовой валюты.</param>
-    [SetsRequiredMembers]
-    public FavouriteCurrency(string name, string currency, string baseCurrency)
-    {
-        Name = name;
-        Currency = currency;
-        BaseCurrency = baseCurrency;
-    }
     
     /// <summary>
     /// Идентификатор элемента избранного

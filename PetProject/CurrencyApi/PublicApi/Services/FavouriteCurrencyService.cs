@@ -21,14 +21,14 @@ public interface IFavouriteCurrencyService
     /// <param name="name">Название избранного</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Курс избранной валюты</returns>
-    public Task<FavouriteCurrency> GetFavouriteCurrencyAsync(string name, CancellationToken cancellationToken);
+    public Task<FavouriteCurrencyDto> GetFavouriteCurrencyAsync(string name, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Получить список всех Избранных
     /// </summary>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Список всех избранных валют</returns>
-    public Task<IEnumerable<FavouriteCurrency>> GetFavouritesCurrenciesAsync(CancellationToken cancellationToken);
+    public Task<IEnumerable<FavouriteCurrencyDto>> GetFavouritesCurrenciesAsync(CancellationToken cancellationToken);
 
 
     /// <summary>
@@ -101,30 +101,42 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
         _mapper = mapper;
     }
 
-    /// <inheritdoc />
-    /// <exception cref="FavouriteCurrencyNotFoundException">Выбрасывается, если избранное <see cref="name" /> не найдено.</exception>
-    public async Task<FavouriteCurrency> GetFavouriteCurrencyAsync(string name, CancellationToken cancellationToken)
+    private async Task<FavouriteCurrency> GetEntityAsync(string name, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var response = await _dbContext
+        var entity = await _dbContext
             .FavouriteCurrencies
             .Where(f => f.Name == name)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (response == null)
+        if (entity == null)
             throw new FavouriteCurrencyNotFoundException(
                 $"Не существует избранной валюты {name}");
 
-        return response;
+        return entity;
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<FavouriteCurrency>> GetFavouritesCurrenciesAsync(CancellationToken cancellationToken)
+    /// <exception cref="FavouriteCurrencyNotFoundException">Выбрасывается, если избранное <see cref="name" /> не найдено.</exception>
+    public async Task<FavouriteCurrencyDto> GetFavouriteCurrencyAsync(string name, CancellationToken cancellationToken)
     {
-        var response = await _dbContext.FavouriteCurrencies.ToListAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        return response;
+        var entity = await GetEntityAsync(name, cancellationToken);
+
+        var dto = _mapper.Map<FavouriteCurrencyDto>(entity);
+
+        return dto;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<FavouriteCurrencyDto>> GetFavouritesCurrenciesAsync(
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        var entities = await _dbContext.FavouriteCurrencies.ToListAsync(cancellationToken);
+
+        return entities.Select(entity => _mapper.Map<FavouriteCurrencyDto>(entity));
     }
 
     /// <inheritdoc />
@@ -166,7 +178,7 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var entity = await GetFavouriteCurrencyAsync(name, cancellationToken);
+        var entity = await GetEntityAsync(name, cancellationToken);
 
         var editedFavouriteCurrency = _mapper.Map<FavouriteCurrency>(dto);
 

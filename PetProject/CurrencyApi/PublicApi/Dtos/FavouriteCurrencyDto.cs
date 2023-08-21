@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using CurrencyApi;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services.Mapper;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
@@ -7,7 +7,7 @@ namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 /// <summary>
 ///     Избранная валюта
 /// </summary>
-public class FavouriteCurrencyDto : IMapTo<FavouriteCurrency>
+public class FavouriteCurrencyDto : IMapFrom<FavouriteCurrency>, IMapTo<FavouriteCurrency>
 {
     /// <summary>
     ///     Название элемента избранного

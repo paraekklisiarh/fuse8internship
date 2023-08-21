@@ -1,4 +1,4 @@
-﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,10 +26,7 @@ public class FavouritesController : ControllerBase
     ///     Получить список всех Избранных
     /// </summary>
     /// <param name="cancellationToken">Токен отмены</param>
-    /// <response code="200">Возвращает, если значение успешно получено.</response>
-    /// <response code="404">Возвращает, если сущность <see cref="name" /> не найдена.</response>
     [HttpGet]
-    [Route("")]
     public async Task<IActionResult> GetFavourites(CancellationToken cancellationToken)
     {
         var response = await _favouriteService.GetFavouritesCurrenciesAsync(cancellationToken);
@@ -56,36 +53,36 @@ public class FavouritesController : ControllerBase
     /// <summary>
     ///     Добавить новое Избранное
     /// </summary>
-    /// <param name="favouriteCurrency">Новый элемент избранного</param>
+    /// <param name="favouriteCurrencyDto">Новый элемент избранного</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <response code="201">Возвращает, если сущность успешно создана.</response>
     [HttpPost]
     [Route("")]
-    public async Task<IActionResult> CreateFavourite(FavouriteCurrency favouriteCurrency,
+    public async Task<IActionResult> CreateFavourite(FavouriteCurrencyDto favouriteCurrencyDto,
         CancellationToken cancellationToken)
     {
-        await _favouriteService.AddFavouriteCurrencyAsync(favouriteCurrency, cancellationToken);
+        await _favouriteService.AddFavouriteCurrencyAsync(favouriteCurrencyDto, cancellationToken);
 
-        var location = Url.Action(nameof(GetFavourite), favouriteCurrency.Name);
-        return Created(location, favouriteCurrency);
+        var location = Url.Action(nameof(GetFavourite), favouriteCurrencyDto.Name);
+        return Created(location!, favouriteCurrencyDto);
     }
 
     /// <summary>
     ///     Изменить Избранное по его названию
     /// </summary>
     /// <param name="name">Название элемента избранного</param>
-    /// <param name="favouriteCurrency">Обновленный элемент избранного</param>
+    /// <param name="favouriteCurrencyDto">Обновленный элемент избранного</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <response code="204">Возвращает, если сущность успешно обновлена.</response>
     /// <response code="404">Возвращает, если сущность <see cref="name" /> не найдена.</response>
     /// 409
-    /// <response code="409">Возвращает, если сущность <see cref="favouriteCurrency" /> не уникальна.</response>
+    /// <response code="409">Возвращает, если сущность <see cref="favouriteCurrencyDto" /> не уникальна.</response>
     [HttpPut]
     [Route("{name}")]
-    public async Task<IActionResult> UpdateFavourite(string name, FavouriteCurrency favouriteCurrency,
+    public async Task<IActionResult> UpdateFavourite(string name, FavouriteCurrencyDto favouriteCurrencyDto,
         CancellationToken cancellationToken)
     {
-        await _favouriteService.EditFavouriteCurrencyAsync(name, favouriteCurrency, cancellationToken);
+        await _favouriteService.EditFavouriteCurrencyAsync(name, favouriteCurrencyDto, cancellationToken);
 
         return NoContent();
     }
@@ -135,8 +132,8 @@ public class FavouritesController : ControllerBase
     /// <response code="404">Возвращает, если сущность <see cref="name" /> не найдена.</response>
     /// <response code="429">Возвращает, если токены API исчерпаны.</response>
     [HttpGet]
-    [Route("{name}")]
-    public async Task<IActionResult> GetFavouriteCurrencyOnDate(string name, DateOnly targetDate,
+    [Route("{name}/{targetDate}")]
+    public async Task<IActionResult> GetFavouriteCurrencyOnDate([FromRoute] string name, [FromRoute] DateOnly targetDate,
         CancellationToken cancellationToken)
     {
         var result = await _favouriteService.GetFavouriteCurrencyOnDateAsync(name, targetDate, cancellationToken);

@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Services.Mapper;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 
 /// <summary>
 /// Избранная валюта
 /// </summary>
-public class FavouriteCurrency
+public class FavouriteCurrency : IMapFrom<FavouriteCurrencyDto>
 {
     /// <summary>
     /// Класс FavouriteCurrency представляет избранную валюту

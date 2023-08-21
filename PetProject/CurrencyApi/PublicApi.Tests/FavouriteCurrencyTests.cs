@@ -1,6 +1,8 @@
 ﻿using System.Globalization;
+using AutoMapper;
 using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Grpc.Core;
@@ -14,6 +16,7 @@ public class FavouriteCurrencyTests : IDisposable
 {
     private readonly IFavouriteCurrencyService _sut;
     private readonly AppDbContext _mockDbContext;
+    private readonly Mock<IMapper> _mapperMock;
 
     private CurrencyApiSetting _setting = new()
     {
@@ -27,16 +30,18 @@ public class FavouriteCurrencyTests : IDisposable
     public FavouriteCurrencyTests()
     {
         _currencyApiSettingsMock.Setup(m => m.GetDefaultCurrencyAsync(It.IsAny<CancellationToken>()))
-            .Returns(async () => _setting.DefaultCurrency);
+            .Returns(() => Task.FromResult(_setting.DefaultCurrency));
         _currencyApiSettingsMock.Setup(m => m.GetCurrencyRoundCountAsync(It.IsAny<CancellationToken>()))
-            .Returns(async () => (int)_setting.CurrencyRoundCount!);
+            .Returns(() => Task.FromResult((int)_setting.CurrencyRoundCount!));
+
+        _mapperMock = new Mock<IMapper>();
 
         var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _mockDbContext = new AppDbContext(dbOptions);
         _sut = new FavouriteCurrencyService(_mockDbContext, _getCurrencyClientMock.Object,
-            _currencyApiSettingsMock.Object);
+            _currencyApiSettingsMock.Object, _mapperMock.Object);
     }
 
     public void Dispose()
@@ -119,11 +124,20 @@ public class FavouriteCurrencyTests : IDisposable
         _mockDbContext.FavouriteCurrencies.Add(entity);
         await _mockDbContext.SaveChangesAsync(ct);
 
+
+        var newEntityDto = new FavouriteCurrencyDto
+        {
+            Name = name,
+            Currency = "NC",
+            BaseCurrency = "NBC"
+        };
         var newEntity = new FavouriteCurrency(name, "NC", "NBC");
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(newEntityDto) )
+            .Returns(() => newEntity);
 
         // Act and Assert
         await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(
-            () => _sut.AddFavouriteCurrencyAsync(newEntity, ct));
+            () => _sut.AddFavouriteCurrencyAsync(newEntityDto, ct));
     }
 
     [Fact]
@@ -137,15 +151,31 @@ public class FavouriteCurrencyTests : IDisposable
         await _mockDbContext.SaveChangesAsync(ct);
 
         var nonUniqEntity = new FavouriteCurrency("NewName", "C", "BC");
-
+        var nonUniqEntityDto = new FavouriteCurrencyDto
+        {
+            Name = "NewName",
+            Currency = "C",
+            BaseCurrency = "BC"
+        };
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(nonUniqEntityDto) )
+            .Returns(() => nonUniqEntity);
+        
         var uniqEntity = new FavouriteCurrency("NewName", "NC", "BC");
+        var uniqEntityDto = new FavouriteCurrencyDto
+        {
+            Name = "NewName",
+            Currency = "NC",
+            BaseCurrency = "BC"
+        };
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(uniqEntityDto) )
+            .Returns(() => uniqEntity);
 
-        // Act and Assert
+        //// Act and Assert
         await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(() =>
-            _sut.AddFavouriteCurrencyAsync(nonUniqEntity, ct));
+            _sut.AddFavouriteCurrencyAsync(nonUniqEntityDto, ct));
 
         // Только сочетание Валюта+Базовая валюта должно быть уникально.
-        var exception = await Record.ExceptionAsync(() => _sut.AddFavouriteCurrencyAsync(uniqEntity, ct));
+        var exception = await Record.ExceptionAsync(() => _sut.AddFavouriteCurrencyAsync(uniqEntityDto, ct));
         Assert.Null(exception);
     }
 
@@ -155,10 +185,19 @@ public class FavouriteCurrencyTests : IDisposable
         // Arrange
         var ct = CancellationToken.None;
         var name = "RubToEur";
-        var entity = new FavouriteCurrency(name, "C", "BC");
+        
+        var newEntityDto = new FavouriteCurrencyDto
+        {
+            Name = name,
+            Currency = "NC",
+            BaseCurrency = "NBC"
+        };
+        var newEntity = new FavouriteCurrency(name, "NC", "NBC");
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(newEntityDto) )
+            .Returns(() => newEntity);
 
         // Act
-        await _sut.AddFavouriteCurrencyAsync(entity, ct);
+        await _sut.AddFavouriteCurrencyAsync(newEntityDto, ct);
 
         // Assert
         Assert.True(_mockDbContext.FavouriteCurrencies.Any());
@@ -170,21 +209,24 @@ public class FavouriteCurrencyTests : IDisposable
         // Arrange
         var ct = CancellationToken.None;
         var name = "RubToEur";
-        var entities = new List<FavouriteCurrency>
-        {
-            new(name, "C", "BC"),
-            new("other", "NC", "NBC"),
-            new("otherUnique", "OC", "NBC")
-        };
-        _mockDbContext.FavouriteCurrencies.AddRange(entities);
+        _mockDbContext.FavouriteCurrencies.Add(new FavouriteCurrency(name, "C", "NBC"));
+        _mockDbContext.FavouriteCurrencies.Add(new FavouriteCurrency("OtherUnique", "NC", "NBC"));
         await _mockDbContext.SaveChangesAsync(ct);
 
-        var newName = "edited";
+        var newName = "NewName";
         var editedEntity = new FavouriteCurrency(newName, "NC", "NBC");
+        var editedEntityDto = new FavouriteCurrencyDto
+        {
+            Name = newName,
+            Currency = "NC",
+            BaseCurrency = "NBC"
+        };
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(editedEntityDto) )
+            .Returns(() => editedEntity);
 
         // Act and Assert
         await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(() =>
-            _sut.EditFavouriteCurrencyAsync(name, editedEntity, ct));
+            _sut.EditFavouriteCurrencyAsync(name, editedEntityDto, ct));
     }
 
     [Fact]
@@ -203,10 +245,18 @@ public class FavouriteCurrencyTests : IDisposable
 
         var newName = "otherUnique";
         var editedEntity = new FavouriteCurrency(newName, "NC", "NBC");
+        var editedEntityDto = new FavouriteCurrencyDto
+        {
+            Name = newName,
+            Currency = "NC",
+            BaseCurrency = "NBC"
+        };
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(editedEntityDto) )
+            .Returns(() => editedEntity);
 
         // Act and Assert
         await Assert.ThrowsAsync<NotUniqueFavouriteCurrencyException>(() =>
-            _sut.EditFavouriteCurrencyAsync(name, editedEntity, ct));
+            _sut.EditFavouriteCurrencyAsync(name, editedEntityDto, ct));
     }
 
     [Fact]
@@ -225,10 +275,18 @@ public class FavouriteCurrencyTests : IDisposable
 
         var newName = "newName";
         var editedEntity = new FavouriteCurrency(newName, "NC", "NBC");
+        var editedEntityDto = new FavouriteCurrencyDto
+        {
+            Name = newName,
+            Currency = "NC",
+            BaseCurrency = "NBC"
+        };
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(editedEntityDto) )
+            .Returns(() => editedEntity);
 
         // Act and Assert
         await Assert.ThrowsAsync<FavouriteCurrencyNotFoundException>(() =>
-            _sut.EditFavouriteCurrencyAsync(name, editedEntity, ct));
+            _sut.EditFavouriteCurrencyAsync(name, editedEntityDto, ct));
     }
 
     [Fact]
@@ -241,10 +299,19 @@ public class FavouriteCurrencyTests : IDisposable
         _mockDbContext.FavouriteCurrencies.Add(entity);
         await _mockDbContext.SaveChangesAsync(ct);
 
-        var editedEntity = new FavouriteCurrency("edited", "NC", "NBC");
+        var newName = "edited";
+        var editedEntity = new FavouriteCurrency(newName, "NC", "NBC");
+        var editedEntityDto = new FavouriteCurrencyDto
+        {
+            Name = newName,
+            Currency = "NC",
+            BaseCurrency = "NBC"
+        };
+        _mapperMock.Setup(m => m.Map<FavouriteCurrency>(editedEntityDto) )
+            .Returns(() => editedEntity);
 
         // Act
-        await _sut.EditFavouriteCurrencyAsync(name, editedEntity, ct);
+        await _sut.EditFavouriteCurrencyAsync(name, editedEntityDto, ct);
 
         var actual = await _mockDbContext.FavouriteCurrencies.FirstOrDefaultAsync(ct);
 
@@ -321,7 +388,7 @@ public class FavouriteCurrencyTests : IDisposable
         Assert.Equal(Math.Round(value, roundCount), actual.Value);
         Assert.Equal(currency, actual.Code);
     }
-    
+
     [Fact]
     public async Task GetFavouriteCurrencyOnDate_ReturnCurrency_AndItIsRounded()
     {
@@ -348,7 +415,8 @@ public class FavouriteCurrencyTests : IDisposable
         var grpcResponse = new AsyncUnaryCall<CurrencyDTO>(Task.FromResult(dto), Task.FromResult(new Metadata()),
             () => Status.DefaultSuccess, () => new Metadata(), () => { });
 
-        _getCurrencyClientMock.Setup(g => g.GetFavouriteCurrencyOnDateAsync(It.IsAny<CurrencyApi.FavouriteCurrencyOnDate>(),
+        _getCurrencyClientMock.Setup(g => g.GetFavouriteCurrencyOnDateAsync(
+                It.IsAny<CurrencyApi.FavouriteCurrencyOnDate>(),
                 It.IsAny<Metadata>(), It.IsAny<DateTime?>(), It.IsAny<CancellationToken>()))
             .Returns(grpcResponse);
 

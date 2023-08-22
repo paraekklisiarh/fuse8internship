@@ -13,7 +13,6 @@ public class TestDatabaseFixture
     public TestDatabaseFixture()
     {
         using var context = CreateContext();
-        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
 

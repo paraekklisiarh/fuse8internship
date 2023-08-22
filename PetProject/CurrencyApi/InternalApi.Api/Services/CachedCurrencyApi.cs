@@ -126,7 +126,10 @@ public class CachedCurrencyApi : ICachedCurrencyApi
 
         var memoryCacheKey = currencyType + targetDate.ToString();
         if (_memoryCache.TryGetValue(memoryCacheKey, out Currency? currency))
+        {
+            _logger.LogInformation("Из кеша в памяти извлечён {Key}", memoryCacheKey);
             return currency;
+        }
 
         var minimalTime = DateTime.UtcNow.AddHours(-_cacheSettings.CacheExpirationHours);
 

@@ -2,12 +2,14 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using InternalApi;
 using InternalApi.Contracts;
 using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
 using InternalApi.Services;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -28,15 +30,9 @@ var env = builder.Environment;
 builder.WebHost.UseKestrel((context, options) =>
 {
     var grpcPort = configuration.GetValue<int>("GrpcPort");
-    
-    options.Listen(IPAddress.Loopback, 5050, cfg =>
-    {
-        cfg.Protocols = HttpProtocols.Http1;
-    });
-    options.Listen(IPAddress.Loopback, grpcPort, cfg =>
-    {
-        cfg.Protocols = HttpProtocols.Http2;
-    });
+
+    options.Listen(IPAddress.Loopback, 5050, cfg => { cfg.Protocols = HttpProtocols.Http1; });
+    options.Listen(IPAddress.Loopback, grpcPort, cfg => { cfg.Protocols = HttpProtocols.Http2; });
 });
 
 //// Services
@@ -81,8 +77,16 @@ services.AddGrpc()
     // Обработчик исключений в RPC-exceptions
     .AddServiceOptions<GrpcCurrencyService>(options => options.Interceptors.Add<ExceptionInterceptor>());
 services.AddGrpcReflection();
-services.AddGrpcHealthChecks()
-    .AddCheck("Sample", () => HealthCheckResult.Healthy());
+services.AddGrpcHealthChecks();
+
+services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>()
+    .AddUrlGroup(new Uri(configuration.GetValue<string>("ExternalApis:CurrencyAPI:BaseUrl") + "status"), "CurrencyApi",
+        timeout: TimeSpan.FromMinutes(5), configureClient: (provider, client) =>
+        {
+            client.DefaultRequestHeaders.Add("apikey",
+                configuration.GetValue<string>("ExternalApis:CurrencyAPI:ApiKey"));
+        });
 
 //// HttpClient
 // Пусть HttpClient`ами управляет умная часть приложения
@@ -132,12 +136,34 @@ await MigrateDatabase(app);
 
 app.UseHttpLogging();
 
+
 if (env.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
     app.MapGrpcReflectionService();
 }
+
+// HealthCheck
+app.UseHealthChecks("/health", options: new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "applications/json";
+        var response = new HealthCheckResponse
+        {
+            Status = report.Status.ToString(),
+            HealthChecks = report.Entries.Select(x => new IndividualHealthCheckResponse
+            {
+                Status = x.Key,
+                Component = x.Value.Status.ToString(),
+                Description = x.Value.Description
+            }),
+            HealthCheckDuration = report.TotalDuration
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
 
 // gRPC port
 app.UseWhen(

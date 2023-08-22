@@ -3,6 +3,7 @@ using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace InternalApi.Services;
@@ -12,6 +13,7 @@ namespace InternalApi.Services;
 /// </summary>
 public class CachedCurrencyApi : ICachedCurrencyApi
 {
+    private readonly IMemoryCache _memoryCache;
     private readonly ILogger<CachedCurrencyApi> _logger;
     private readonly ICurrencyApi _currencyApi;
     private readonly CurrencyCacheSettings _cacheSettings;
@@ -28,15 +30,17 @@ public class CachedCurrencyApi : ICachedCurrencyApi
     /// <param name="cacheSettings">Настройки кеша</param>
     /// <param name="dbContext">База данных</param>
     /// <param name="cacheUpdateLock">Глобальный словарь блокировок для обновления кеша</param>
+    /// <param name="memoryCache">Кеш в памяти приложения</param>
     public CachedCurrencyApi(ILogger<CachedCurrencyApi> logger, ICurrencyApi currencyApi,
         IOptionsMonitor<CurrencyCacheSettings> cacheSettings, AppDbContext dbContext,
-        RenewalDatesDictionary cacheUpdateLock)
+        RenewalDatesDictionary cacheUpdateLock, IMemoryCache memoryCache)
     {
         _logger = logger;
         _currencyApi = currencyApi;
         _cacheSettings = cacheSettings.CurrentValue;
         _dbContext = dbContext;
         _cacheUpdateLock = cacheUpdateLock;
+        _memoryCache = memoryCache;
     }
 
     /// <inheritdoc />
@@ -120,9 +124,13 @@ public class CachedCurrencyApi : ICachedCurrencyApi
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        var memoryCacheKey = currencyType + targetDate.ToString();
+        if (_memoryCache.TryGetValue(memoryCacheKey, out Currency? currency))
+            return currency;
+
         var minimalTime = DateTime.UtcNow.AddHours(-_cacheSettings.CacheExpirationHours);
 
-        var currency = targetDate is null
+        currency = targetDate is null
             ? await _dbContext.Currencies
                 .Where(c => c.Code == currencyType && c.RateDate >= minimalTime)
                 .OrderByDescending(r => r.RateDate)
@@ -133,6 +141,15 @@ public class CachedCurrencyApi : ICachedCurrencyApi
                 .OrderByDescending(c => c.RateDate)
                 .FirstOrDefaultAsync(cancellationToken);
 
+        var cacheExpiryOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpiration = DateTime.Now.AddMinutes(5),
+            Priority = CacheItemPriority.High,
+            SlidingExpiration = TimeSpan.FromMinutes(2),
+        };
+
+        if (currency != null) _memoryCache.Set(memoryCacheKey, currency, cacheExpiryOptions);
+        
         return currency;
     }
 

@@ -3,6 +3,7 @@ using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
 using InternalApi.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -16,6 +17,7 @@ public class CachedCurrencyApiInternalTests : IDisposable
 {
     private readonly CachedCurrencyApi _sut;
 
+    private readonly Mock<IMemoryCache> _memoryCacheMock = new();
     private readonly Mock<ILogger<CachedCurrencyApi>> _loggerMock = new();
     private readonly Mock<ICurrencyApi> _externalApiMock = new();
     private readonly Mock<IOptionsMonitor<CurrencyCacheSettings>> _cacheOptionsMock = new();
@@ -42,9 +44,16 @@ public class CachedCurrencyApiInternalTests : IDisposable
             .Returns(_cacheSettingsMock);
 
         _dbContext = fixture.CreateContext();
+        
+        object? expectedOut = new();
+        _memoryCacheMock.Setup(c => c.TryGetValue( It.IsAny<object>(), out expectedOut))
+            .Returns(true);
+        var cacheEntry = Mock.Of<ICacheEntry>();
+        _memoryCacheMock.Setup(c => c.CreateEntry(It.IsAny<object>()))
+            .Returns(cacheEntry);
 
         _sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object,
-            _dbContext, _lockerDictionary);
+            _dbContext, _lockerDictionary, _memoryCacheMock.Object);
     }
 
     public void Dispose()

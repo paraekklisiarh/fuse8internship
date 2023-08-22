@@ -109,8 +109,10 @@ services.AddHttpClient<ICurrencyApi, ApiService>()
 //// Our services register
 
 // CurrencyAPI cache services
+services.AddMemoryCache();
 services.AddTransient<ICachedCurrencyApi, CachedCurrencyApi>();
 services.AddSingleton(typeof(RenewalDatesDictionary));
+
 
 //// Global settings
 // External API settings

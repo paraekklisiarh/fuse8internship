@@ -4,6 +4,7 @@ using InternalApi.Entities;
 using InternalApi.Infrastructure;
 using InternalApi.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -16,6 +17,8 @@ public class CachedCurrencyApiTests : IDisposable
 {
     private CachedCurrencyApi _sut;
 
+    private readonly Mock<IMemoryCache> _memoryCacheMock = new();
+    
     private readonly Mock<ILogger<CachedCurrencyApi>> _loggerMock = new();
     private readonly Mock<ICurrencyApi> _externalApiMock = new();
     private readonly Mock<IOptionsMonitor<CurrencyCacheSettings>> _cacheOptionsMock = new();
@@ -40,8 +43,15 @@ public class CachedCurrencyApiTests : IDisposable
             .Setup(o => o.CurrentValue)
             .Returns(_cacheSettingsMock);
 
+        object? expectedOut = new();
+        _memoryCacheMock.Setup(c => c.TryGetValue( It.IsAny<object>(), out expectedOut))
+            .Returns(true);
+        var cacheEntry = Mock.Of<ICacheEntry>();
+        _memoryCacheMock.Setup(c => c.CreateEntry(It.IsAny<object>()))
+            .Returns(cacheEntry);
+
         _sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object,
-            _dbContext, _lockerDictionary);
+            _dbContext, _lockerDictionary, _memoryCacheMock.Object);
     }
 
     public void Dispose()
@@ -50,7 +60,39 @@ public class CachedCurrencyApiTests : IDisposable
     }
 
     [Fact]
-    public async Task GetCurrentCurrencyAsync_ReturnCurrencyFromCache()
+    public async Task GetCurrentCurrencyAsync_ReturnCurrencyFromInMemoryCache()
+    {
+        // Arrange
+        var currencyType = CurrencyType.USD;
+        decimal value = 100;
+        var ct = CancellationToken.None;
+
+        var entity = new Currency
+        {
+            Id = 0,
+            Code = currencyType,
+            Value = value,
+            RateDate = DateTime.Now
+        };
+        object expectedOut = entity;
+        _memoryCacheMock.Setup(c => c.TryGetValue( It.IsAny<object>(), out expectedOut!))
+            .Returns(true);
+        
+        // Act
+
+        var actual = await _sut.GetCurrentCurrencyAsync(currencyType, ct);
+
+        // Assert
+
+        Assert.Equal(entity, actual);
+        _externalApiMock.Verify(
+            api => api.GetAllCurrentCurrenciesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        Assert.False(await _dbContext.Currencies.AnyAsync(cancellationToken: ct));
+    }
+    
+    [Fact]
+    public async Task GetCurrentCurrencyAsync_ReturnCurrencyFromDbCache()
     {
         // Arrange
         var currencyType = CurrencyType.USD;
@@ -67,7 +109,7 @@ public class CachedCurrencyApiTests : IDisposable
 
         _dbContext.Currencies.Add(entity);
         await _dbContext.SaveChangesAsync(ct);
-
+        
         // Act
 
         var actual = await _sut.GetCurrentCurrencyAsync(currencyType, ct);
@@ -78,6 +120,8 @@ public class CachedCurrencyApiTests : IDisposable
         _externalApiMock.Verify(
             api => api.GetAllCurrentCurrenciesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
+        _memoryCacheMock.Verify(c => c.CreateEntry(It.IsAny<object>()),
+            Times.Once);
     }
 
     [Fact]
@@ -131,7 +175,6 @@ public class CachedCurrencyApiTests : IDisposable
         // Arrange
         var currencyType = CurrencyType.USD;
         decimal value = 100;
-        var date = DateTime.Now.AddHours(-1);
         var ct = CancellationToken.None;
         
         var apiResponse = new RootCurrencyApiDto
@@ -151,7 +194,7 @@ public class CachedCurrencyApiTests : IDisposable
             {
                 _dbContext = Fixture.CreateContext();
                 _sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object,
-                    _dbContext, _lockerDictionary);
+                    _dbContext, _lockerDictionary, _memoryCacheMock.Object);
                 
                 return _sut.GetCurrentCurrencyAsync(currencyType, ct);
             }, ct); });
@@ -170,7 +213,40 @@ public class CachedCurrencyApiTests : IDisposable
     }
 
     [Fact]
-    public async Task GetCurrencyOnDateAsync_ReturnCurrencyFromCache()
+    public async Task GetCurrencyOnDateAsync_ReturnCurrencyFromInMemoryCache()
+    {
+        // Arrange
+        var currencyType = CurrencyType.USD;
+        decimal value = 100;
+        var date = DateTime.UtcNow.AddDays(-100);
+        var ct = CancellationToken.None;
+
+        var entity = new Currency
+        {
+            Id = 0,
+            Code = currencyType,
+            Value = value,
+            RateDate = date
+        };
+        object expectedOut = entity;
+        _memoryCacheMock.Setup(c => c.TryGetValue( It.IsAny<object>(), out expectedOut!))
+            .Returns(true);
+        
+        // Act
+
+        var actual = await _sut.GetCurrencyOnDateAsync(currencyType, DateOnly.FromDateTime(date), ct);
+
+        // Assert
+
+        Assert.Equal(entity, actual);
+        
+        _externalApiMock.Verify(api => api.GetAllCurrenciesOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>() ),
+            Times.Never);
+        Assert.False(await _dbContext.Currencies.AnyAsync(cancellationToken: ct));
+    }
+    
+    [Fact]
+    public async Task GetCurrencyOnDateAsync_ReturnCurrencyFromDbCache()
     {
         // Arrange
         var currencyType = CurrencyType.USD;

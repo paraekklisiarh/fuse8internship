@@ -1,10 +1,9 @@
 ﻿using InternalApi.Dtos;
-using InternalApi.Entities;
 
 namespace InternalApi.Contracts;
 
 /// <summary>
-/// Сервис взаимодействия со внешним CurrencyAPI
+///     Сервис взаимодействия со внешним CurrencyAPI
 /// </summary>
 public interface ICurrencyApi
 {
@@ -25,7 +24,7 @@ public interface ICurrencyApi
     /// <returns>Список курсов валют на дату</returns>
     Task<RootCurrencyApiDto> GetAllCurrenciesOnDateAsync(string baseCurrency, DateOnly date,
         CancellationToken cancellationToken);
-    
+
     /// <summary>
     ///     Наличие доступных токенов
     /// </summary>

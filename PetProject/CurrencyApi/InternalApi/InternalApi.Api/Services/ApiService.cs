@@ -77,7 +77,7 @@ public class ApiService : ICurrencyApi
             var apiDto = JsonSerializer.Deserialize<RootCurrencyApiDto>(responseApiBody);
 
             return apiDto ??
-                   throw new InvalidOperationException("Возникла неожиданная ошибка при получении курса валют");;
+                   throw new InvalidOperationException("Возникла неожиданная ошибка при получении курса валют");
         }
 
         throw new OperationCanceledException(cancellationToken);
@@ -93,7 +93,7 @@ public class ApiService : ICurrencyApi
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            var url = "status";
+            const string url = "status";
             // Формирование Http-запроса
             _httpClient.DefaultRequestHeaders.Add("apikey", _apiSettings.ApiKey);
 

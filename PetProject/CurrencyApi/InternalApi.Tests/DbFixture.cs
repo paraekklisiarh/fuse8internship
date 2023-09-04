@@ -9,7 +9,7 @@ public class TestAppDbContextDatabaseFixture
 {
     private const string ConnectionString = "Host=localhost; Database=currency_api_tests; Username=postgres; Password=admin";
 
-    private static readonly object _lock = new();
+    private static readonly object Lock = new();
     private static bool _dbInitialized;
 
     public TestAppDbContextDatabaseFixture()

@@ -9,7 +9,7 @@ public class ConfigurationDbContext : DbContext
     {
     }
 
-    public DbSet<ConfigurationEntity> ConfigurationEntities { get; set; }
+    public DbSet<ConfigurationEntity> ConfigurationEntities { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

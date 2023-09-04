@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using InternalApi.Configuration;
+﻿using InternalApi.Configuration;
 using InternalApi.Entities;
 using InternalApi.Infrastructure.Data.CurrencyContext;
 using Microsoft.EntityFrameworkCore;
@@ -34,11 +33,8 @@ public class CurrencyConversionService : ICurrencyConversionService
     /// <param name="cacheSettings">Текущие настройки кеша</param>
     /// <param name="logger">Логгер</param>
     /// <param name="configuration">Текущая конфигурация приложения</param>
-    public CurrencyConversionService(AppDbContext dbContext,
-        IOptionsMonitor<CurrencyCacheSettings> cacheSettings,
-        ILogger<CurrencyConversionService> logger,
-        IConfiguration configuration
-    )
+    public CurrencyConversionService(AppDbContext dbContext, IOptionsMonitor<CurrencyCacheSettings> cacheSettings,
+        ILogger<CurrencyConversionService> logger, IConfiguration configuration)
     {
         _dbContext = dbContext;
         _cacheSettings = cacheSettings.CurrentValue;
@@ -56,11 +52,9 @@ public class CurrencyConversionService : ICurrencyConversionService
 
         // Получаем задачу из базы данных
         _logger.LogInformation("Получена задача пересчета кеша валют {TaskId}", taskId);
-        var task = await _dbContext.CurrencyConversionTasks.FirstOrDefaultAsync(t => t.Id == taskId,
-            cancellationToken);
+        var task = await _dbContext.CurrencyConversionTasks.FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
 
-        if (task == null)
-            return;
+        if (task == null) return;
 
         //// Подготовка к пересчёту курсов валюты
         var oldBaseCurrencyCode = _cacheSettings.BaseCurrency;
@@ -72,7 +66,7 @@ public class CurrencyConversionService : ICurrencyConversionService
             task.EndTime = DateTimeOffset.UtcNow;
             await _dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Базовая валюта задачи {TaskId} уже соответствует текущей", task.Id);
-            
+
             return;
         }
 
@@ -83,13 +77,10 @@ public class CurrencyConversionService : ICurrencyConversionService
             "Начата обработка задачи пересчета курса валют: {OldBaseCurrencyCode} -> {NewBaseCurrencyCode}",
             oldBaseCurrencyCode, newBaseCurrencyCode);
 
-        var allDates =
-            await _dbContext.Currencies
-                .AsNoTracking()
-                .Select(c => c.RateDate)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-
+        var allDates = await _dbContext.Currencies.AsNoTracking()
+            .Select(c => c.RateDate)
+            .Distinct()
+            .ToListAsync(cancellationToken);
 
         //// Выполнение задачи
 
@@ -122,7 +113,7 @@ public class CurrencyConversionService : ICurrencyConversionService
                     if (oldBaseCurrency == null)
                         throw new CurrencyConversionNotFoundException(
                             $"Значение базовой валюты {oldBaseCurrencyCode} не найдено на дату {date}. Кеш повреждён");
-                    
+
                     var newBaseCurrency =
                         currencies.FirstOrDefault(c => c.RateDate == date && c.Code == newBaseCurrencyCode);
                     if (newBaseCurrency == null)
@@ -131,18 +122,14 @@ public class CurrencyConversionService : ICurrencyConversionService
 
                     var multiplier = 1 / newBaseCurrency.Value;
 
-                    foreach (var currency in currencies)
-                    {
-                        currency.Value *= multiplier;
-                    }
+                    foreach (var currency in currencies) currency.Value *= multiplier;
                 }
 
-                //await transaction.CreateSavepointAsync(name: "conversion_success", cancellationToken);
                 _logger.LogInformation("Задача {TaskId}: пересчет валют успешно завершен", task.Id);
 
                 // Завершаем транзакцию
                 await transaction.CommitAsync(cancellationToken);
-                
+
                 // Меняем статус задачи на выполненный
                 task.Status = CurrencyConversionStatus.Success;
                 task.EndTime = DateTimeOffset.UtcNow;
@@ -179,11 +166,6 @@ public class CurrencyConversionService : ICurrencyConversionService
 /// </summary>
 public class CurrencyConversionNotFoundException : Exception
 {
-    /// <inheritdoc />
-    public CurrencyConversionNotFoundException()
-    {
-    }
-
     /// <inheritdoc />
     public CurrencyConversionNotFoundException(string? message) : base(message)
     {

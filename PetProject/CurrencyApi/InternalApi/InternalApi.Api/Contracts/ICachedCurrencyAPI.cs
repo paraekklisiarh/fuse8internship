@@ -1,5 +1,4 @@
-﻿using CurrencyApi;
-using InternalApi.Entities;
+﻿using InternalApi.Entities;
 
 namespace InternalApi.Contracts;
 
@@ -25,6 +24,4 @@ public interface ICachedCurrencyApi
     /// <returns>Курс на дату</returns>
     Task<Currency> GetCurrencyOnDateAsync(CurrencyType currencyType, DateOnly date,
         CancellationToken cancellationToken);
-
-    
 }

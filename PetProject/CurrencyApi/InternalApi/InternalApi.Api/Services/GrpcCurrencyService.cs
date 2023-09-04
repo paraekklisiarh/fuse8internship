@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using CurrencyApi;
 using Google.Protobuf;
@@ -7,7 +6,6 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using InternalApi.Configuration;
 using InternalApi.Contracts;
-using InternalApi.Dtos;
 using InternalApi.Entities;
 using Microsoft.Extensions.Options;
 using Enum = System.Enum;
@@ -42,13 +40,11 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
         while (!context.CancellationToken.IsCancellationRequested)
         {
             var couldParse = Enum.TryParse(request.CurrencyType.ToString(), true, out CurrencyType currencyType);
-            if (!couldParse
-                && !Enum.IsDefined(typeof(CurrencyType), currencyType))
+            if (!couldParse && !Enum.IsDefined(typeof(CurrencyType), currencyType))
                 throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
 
             // Получение DTO из кеша или API
-            var currency = await _currencyCacheService
-                .GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
+            var currency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
             return ParseDto(currency);
         }
 
@@ -69,18 +65,14 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
             // Парсинг даты в UTC
             var date = request.Date.ToDateTime().ToUniversalTime();
             if (date > DateTime.UtcNow) throw new ValidationException();
-
             var currencyDate = DateOnly.FromDateTime(date);
-
             var couldParse = Enum.TryParse(request.CurrencyType.ToString(), true, out CurrencyType currencyType);
-            if (!couldParse
-                && !Enum.IsDefined(typeof(CurrencyType), currencyType))
+            if (!couldParse && !Enum.IsDefined(typeof(CurrencyType), currencyType))
                 throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
 
             // Получение DTO из кеша или API
             var currency = await _currencyCacheService.GetCurrencyOnDateAsync(
                 currencyType, currencyDate, context.CancellationToken);
-
             return ParseDto(currency);
         }
 
@@ -102,7 +94,6 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
                 BaseCurrency = _currencyCacheSettings.BaseCurrency.ToString(),
                 NewRequestsAvailable = await _currencyApi.IsNewRequestsAvailable(context.CancellationToken)
             };
-
         throw new OperationCanceledException(context.CancellationToken);
     }
 
@@ -114,21 +105,17 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
     private static CurrencyDTO ParseDto(Currency currency)
     {
         var couldParse = Enum.TryParse(currency.Code.ToString(), true, out CurrencyTypeDTO currencyType);
-        if (!couldParse
-            && !Enum.IsDefined(typeof(CurrencyTypeDTO), currencyType))
+        if (!couldParse && !Enum.IsDefined(typeof(CurrencyTypeDTO), currencyType))
             throw new ArgumentException($"Тип валюты{currency.Code} не поддерживается");
-
         var parsedDto = new CurrencyDTO
         {
-            CurrencyType = currencyType,
-            Value = currency.Value.ToString(CultureInfo.InvariantCulture)
+            CurrencyType = currencyType, Value = currency.Value.ToString(CultureInfo.InvariantCulture)
         };
-
         return parsedDto;
     }
 
     /// <summary>
-    /// Получение текущего курса избранной валюты
+    ///     Получение текущего курса избранной валюты
     /// </summary>
     /// <param name="request">Запрос на получение текущего курса валюты</param>
     /// <param name="context">Контекст запроса</param>
@@ -137,15 +124,12 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
         ServerCallContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
-
         var couldParseBaseType = Enum.TryParse(request.BaseCurrencyType.ToString(), out CurrencyType baseCurrencyType);
         if (!couldParseBaseType && !Enum.IsDefined(typeof(CurrencyType), baseCurrencyType))
             throw new ArgumentException($"Тип валюты {request.BaseCurrencyType} не поддерживается");
-
         var couldParseCurrencyType = Enum.TryParse(request.CurrencyType.ToString(), out CurrencyType currencyType);
         if (!couldParseCurrencyType && !Enum.IsDefined(typeof(CurrencyType), currencyType))
             throw new ArgumentException($"Тип валюты {request.CurrencyType} не поддерживается");
-
         if (baseCurrencyType == _currencyCacheSettings.BaseCurrency)
         {
             var currency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
@@ -156,12 +140,11 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
             await _currencyCacheService.GetCurrentCurrencyAsync(baseCurrencyType, context.CancellationToken);
         var targetCurrency =
             await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
-
-        return ParseDto(currency: targetCurrency with { Value = targetCurrency.Value / baseCurrency.Value });
+        return ParseDto(targetCurrency with { Value = targetCurrency.Value / baseCurrency.Value });
     }
 
     /// <summary>
-    /// Получение курса избранной валюты на указанную дату
+    ///     Получение курса избранной валюты на указанную дату
     /// </summary>
     /// <param name="request">Запрос на получение курса валюты на указанную дату</param>
     /// <param name="context">Контекст запроса</param>
@@ -170,11 +153,9 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
         ServerCallContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
-
         var couldParseBaseType = Enum.TryParse(request.BaseCurrencyType.ToString(), out CurrencyType baseCurrencyType);
         if (!couldParseBaseType && !Enum.IsDefined(typeof(CurrencyType), baseCurrencyType))
             throw new ArgumentException($"Тип валюты{request.BaseCurrencyType} не поддерживается");
-
         var couldParseCurrencyType = Enum.TryParse(request.CurrencyType.ToString(), out CurrencyType currencyType);
         if (!couldParseCurrencyType && !Enum.IsDefined(typeof(CurrencyType), currencyType))
             throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
@@ -182,9 +163,7 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
         // Парсинг даты в UTC
         var date = request.Date.ToDateTime().ToUniversalTime();
         if (date > DateTime.UtcNow) throw new ValidationException();
-
         var currencyDate = DateOnly.FromDateTime(date);
-
         if (baseCurrencyType == _currencyCacheSettings.BaseCurrency)
         {
             var currency =
@@ -198,7 +177,6 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
                 context.CancellationToken);
         var targetCurrency =
             await _currencyCacheService.GetCurrencyOnDateAsync(currencyType, currencyDate, context.CancellationToken);
-
-        return ParseDto(currency: targetCurrency with { Value = targetCurrency.Value / baseCurrency.Value });
+        return ParseDto(targetCurrency with { Value = targetCurrency.Value / baseCurrency.Value });
     }
 }

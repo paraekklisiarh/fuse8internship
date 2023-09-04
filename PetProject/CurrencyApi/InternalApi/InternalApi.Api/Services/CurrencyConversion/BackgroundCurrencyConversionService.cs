@@ -90,7 +90,7 @@ public class BackgroundCurrencyConversionService : BackgroundService
             var processedTask = oldTasks.MaxBy(t => t.StartTime);
             _logger.LogInformation("Обнаружена невыполненная задача пересчета кеша {Id}", processedTask!.Id);
 
-            foreach (var task in oldTasks.Where(t => t.Id != processedTask!.Id))
+            foreach (var task in oldTasks.Where(t => t.Id != processedTask.Id))
             {
                 task.Status = CurrencyConversionStatus.Canceled;
                 task.EndTime = DateTimeOffset.UtcNow;
@@ -109,8 +109,8 @@ public class BackgroundCurrencyConversionService : BackgroundService
 
         await base.StopAsync(stoppingToken);
     }
-    
-    static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
+
+    private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
     {
         // Создаём TaskCompletionSource для ApplicationStarted
         var startedSource = new TaskCompletionSource();

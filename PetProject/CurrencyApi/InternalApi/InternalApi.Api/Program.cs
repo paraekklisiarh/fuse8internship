@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Audit.Core;
 using Audit.Http;
-using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using InternalApi;
 using InternalApi.Configuration;
 using InternalApi.Contracts;

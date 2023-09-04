@@ -1,4 +1,4 @@
-﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
+﻿namespace InternalApi.Entities;
 
 /// <summary>
 ///     Результат хелсчека

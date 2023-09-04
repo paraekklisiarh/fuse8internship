@@ -2,9 +2,7 @@
 using CurrencyApi;
 using InternalApi.Configuration;
 using InternalApi.Contracts;
-using InternalApi.Dtos;
 using InternalApi.Entities;
-using InternalApi.Infrastructure;
 using InternalApi.Infrastructure.Data.CurrencyContext;
 using Microsoft.Extensions.Options;
 
@@ -15,13 +13,23 @@ namespace InternalApi.Services;
 /// </summary>
 public interface ICurrencyService
 {
+    /// <summary>
+    ///     Получение текущего курса валюты по указанному коду
+    /// </summary>
+    /// <param name="currencyType">Код валюты</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>DTO с текущим курсом валюты</returns>
     Task<CurrencyDTO> GetCurrency(CurrencyType currencyType, CancellationToken cancellationToken);
 
-    Task<CurrencyDTO> GetCurrencyOnDate(CurrencyType currencyType, DateOnly date,
-        CancellationToken cancellationToken);
-    
-    
-    
+    /// <summary>
+    ///     Получение курса валюты по указанному коду на указанную дату
+    /// </summary>
+    /// <param name="currencyType">Код валюты</param>
+    /// <param name="date">Дата курса валюты</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>DTO с курсом валюты на указанную дату</returns>
+    Task<CurrencyDTO> GetCurrencyOnDate(CurrencyType currencyType, DateOnly date, CancellationToken cancellationToken);
+
     /// <summary>
     ///     Получить текущие настройки приложения
     /// </summary>
@@ -62,9 +70,10 @@ public class CurrencyService : ICurrencyService
     /// <param name="cacheSettings">Настройки приложения</param>
     /// <param name="conversionQueue">Очередь задач пересчета курса валют относительно новой</param>
     /// <param name="currencyApi">Сервис внешнего API</param>
+    /// <param name="cachedCurrencyApi">Сервис получения курса валют из кеша</param>
     public CurrencyService(ILogger<CurrencyService> logger, AppDbContext dbContext,
-        IOptionsSnapshot<CurrencyCacheSettings> cacheSettings,
-        IInternalQueue<CurrencyConversionTask> conversionQueue, ICurrencyApi currencyApi, ICachedCurrencyApi cachedCurrencyApi)
+        IOptionsSnapshot<CurrencyCacheSettings> cacheSettings, IInternalQueue<CurrencyConversionTask> conversionQueue,
+        ICurrencyApi currencyApi, ICachedCurrencyApi cachedCurrencyApi)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -78,22 +87,19 @@ public class CurrencyService : ICurrencyService
     public async Task<CurrencyDTO> GetCurrency(CurrencyType currencyType, CancellationToken cancellationToken)
     {
         var currency = await _cachedCurrencyApi.GetCurrentCurrencyAsync(currencyType, cancellationToken);
-
         var dto = ParseDto(currency);
-
         return dto;
     }
 
     /// <inheritdoc />
-    public async Task<CurrencyDTO> GetCurrencyOnDate(CurrencyType currencyType, DateOnly date, CancellationToken cancellationToken)
+    public async Task<CurrencyDTO> GetCurrencyOnDate(CurrencyType currencyType, DateOnly date,
+        CancellationToken cancellationToken)
     {
         var currency = await _cachedCurrencyApi.GetCurrencyOnDateAsync(currencyType, date, cancellationToken);
-
         var dto = ParseDto(currency);
-
         return dto;
     }
-    
+
     /// <summary>
     ///     Маппинг курса валюты из кеша в DTO
     /// </summary>
@@ -102,16 +108,12 @@ public class CurrencyService : ICurrencyService
     private static CurrencyDTO ParseDto(Currency currency)
     {
         var couldParse = Enum.TryParse(currency.Code.ToString(), true, out CurrencyTypeDTO currencyType);
-        if (!couldParse
-            && !Enum.IsDefined(typeof(CurrencyTypeDTO), currencyType))
+        if (!couldParse && !Enum.IsDefined(typeof(CurrencyTypeDTO), currencyType))
             throw new ArgumentException($"Тип валюты{currency.Code} не поддерживается");
-
         var parsedDto = new CurrencyDTO
         {
-            CurrencyType = currencyType,
-            Value = currency.Value.ToString(CultureInfo.InvariantCulture)
+            CurrencyType = currencyType, Value = currency.Value.ToString(CultureInfo.InvariantCulture)
         };
-
         return parsedDto;
     }
 
@@ -123,7 +125,6 @@ public class CurrencyService : ICurrencyService
             BaseCurrency = _cacheSettings.BaseCurrency.ToString(),
             NewRequestsAvailable = await _currencyApi.IsNewRequestsAvailable(cancellationToken)
         };
-
         return settings;
     }
 
@@ -156,14 +157,11 @@ public class CurrencyService : ICurrencyService
         await _dbContext.CurrencyConversionTasks.AddAsync(conversionTask);
         await _dbContext.SaveChangesAsync();
         
-
-        // TODO Отправление задачи во внутреннюю очередь
-
-        Task.Run( () => _conversionQueue.Enqueue(conversionTask));
-
+        // Постановка задачи пересчета во внутреннюю очередь
+        Task.Run(() => _conversionQueue.Enqueue(conversionTask));
         _logger.LogInformation("Создана задача пересчета курса валют относительно новой: {NewBaseCurrency}",
             newBaseCurrency);
-        
+
         // Возвращает из метода идентификатор созданной задачи
         return conversionTask.Id;
     }

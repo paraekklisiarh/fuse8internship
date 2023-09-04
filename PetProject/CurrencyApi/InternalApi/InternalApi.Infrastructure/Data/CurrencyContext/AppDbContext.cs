@@ -10,9 +10,9 @@ public class AppDbContext : DbContext
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
     }
 
-    public DbSet<Currency> Currencies { get; set; }
-    
-    public DbSet<CurrencyConversionTask> CurrencyConversionTasks { get; set; }
+    public DbSet<Currency> Currencies { get; set; } = null!;
+
+    public DbSet<CurrencyConversionTask> CurrencyConversionTasks { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

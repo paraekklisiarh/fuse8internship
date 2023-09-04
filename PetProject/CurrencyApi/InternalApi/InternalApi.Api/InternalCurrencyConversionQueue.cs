@@ -8,8 +8,16 @@ namespace InternalApi;
 /// <typeparam name="T">Тип задачи во внутренней очереди</typeparam>
 public interface IInternalQueue<T>
 {
+    /// <summary>
+    ///     Добавить элемент в очередь
+    /// </summary>
+    /// <param name="item">Элемент очереди <see cref="T" /></param>
     void Enqueue(T item);
 
+    /// <summary>
+    ///     Получить из очереди первый элемент
+    /// </summary>
+    /// <returns>Элемент очереди <see cref="T" />, если существует. Иначе null.</returns>
     T? Dequeue();
 }
 
@@ -38,7 +46,7 @@ public class InternalCurrencyConversionQueue : IInternalQueue<CurrencyConversion
     /// <summary>
     ///     Получить из очереди первую задачу по пересчету курса валют
     /// </summary>
-    /// <returns>Задача по пересчету курса валют</returns>
+    /// <returns>Задача по пересчету курса валют, если существует. Иначе null.</returns>
     public CurrencyConversionTask? Dequeue()
     {
         _queue.TryDequeue(out var item);

@@ -1,4 +1,4 @@
-﻿version: '3.9'
+version: '3.9'
 
 services:
   postgres:
@@ -26,7 +26,7 @@ services:
       internal_api:
         condition: service_started
     volumes:
-      - ../DockerData/public_api/appsettings.Development.json:/app/appsettings.Development.json
+      - ../DockerData/public_api/appsettings.${PUBLIC_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${PUBLIC_API_ASPNETCORE_ENVIRONMENT}.json
       - ${HOST_LOGS}public_api/logs:${PUBLIC_API_LOGS}
     environment:
       - ASPNETCORE_URLS=PUBLIC_API_ASPNETCORE_URLS
@@ -48,7 +48,7 @@ services:
       postgres:
         condition: service_started
     volumes:
-      - ../DockerData/internal_api/appsettings.Development.json:/app/appsettings.Development.json
+      - ../DockerData/internal_api/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json
       - HOST_LOGS/internal_api/logs:${INTERNAL_API_LOGS}
     environment:
       - ASPNETCORE_URLS=${INTERNAL_API_ASPNETCORE_URLS}

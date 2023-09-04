@@ -16,13 +16,14 @@ namespace InternalApi.Tests;
 [Collection("TransactionalTests")]
 public class CachedCurrencyApiInternalTests : IDisposable
 {
-    private readonly CachedCurrencyApi _sut;
+    private CachedCurrencyApi _sut;
     private readonly Mock<IMemoryCache> _memoryCacheMock = new();
     private readonly Mock<ILogger<CachedCurrencyApi>> _loggerMock = new();
     private readonly Mock<ICurrencyApi> _externalApiMock = new();
     private readonly Mock<IOptionsMonitor<CurrencyCacheSettings>> _cacheOptionsMock = new();
     private readonly RenewalDatesDictionary _lockerDictionary = new();
-    private readonly AppDbContext _dbContext;
+    private AppDbContext _dbContext;
+    private TestAppDbContextDatabaseFixture _fixture;
 
     private readonly CurrencyCacheSettings _cacheSettingsMock = new()
     {
@@ -31,11 +32,7 @@ public class CachedCurrencyApiInternalTests : IDisposable
 
     public CachedCurrencyApiInternalTests(TestAppDbContextDatabaseFixture fixture)
     {
-        // dbContext mocking
-        // DbContextOptions<AppDbContext> dbOptions = new DbContextOptionsBuilder<AppDbContext>()
-        //     .UseInMemoryDatabase(databaseName: new Guid().ToString())
-        //     .Options;
-        // _dbContext = new AppDbContext(dbOptions);
+        _fixture = fixture;
         _cacheOptionsMock.Setup(o => o.CurrentValue).Returns(_cacheSettingsMock);
         _dbContext = fixture.CreateContext();
         object? expectedOut = new();
@@ -74,16 +71,16 @@ public class CachedCurrencyApiInternalTests : IDisposable
         // Arrange
         var currencyType = CurrencyType.USD;
         var ct = CancellationToken.None;
-        var targetDate = DateOnly.Parse("2000-02-02");
+        var targetDate = DateTimeOffset.UtcNow.AddDays(-10);
         var entity = new Currency
         {
-            Id = 0, Code = CurrencyType.USD, Value = 100, RateDate = targetDate.ToDateTime(new TimeOnly())
+            Id = 0, Code = CurrencyType.USD, Value = 100, RateDate = targetDate
         };
         _dbContext.Currencies.Add(entity);
         await _dbContext.SaveChangesAsync(ct);
 
         // Act
-        var currency = await _sut.GetEntityAsync(currencyType, targetDate, ct);
+        var currency = await _sut.GetEntityAsync(currencyType, DateOnly.FromDateTime(targetDate.Date), ct);
 
         // Assert
         Assert.Equal(entity, currency);
@@ -119,31 +116,38 @@ public class CachedCurrencyApiInternalTests : IDisposable
     {
         // Arrange
         var currencyType = CurrencyType.USD;
-        var targetDate = DateOnly.Parse("2020-02-02");
+        var targetDate = DateTimeOffset.UtcNow;
         var cancellationToken = CancellationToken.None;
         var apiDto = new RootCurrencyApiDto
         {
-            Meta = new MetaCurrencyApiDto { LastUpdatedAt = targetDate.ToDateTime(new TimeOnly()) },
+            Meta = new MetaCurrencyApiDto { LastUpdatedAt = targetDate.Date },
             Data = new Dictionary<string, CurrencyApiDto>
             {
                 { "USD", new CurrencyApiDto { Code = "USD", Value = 10 } }
             }
         };
         _externalApiMock.Setup(a =>
-                a.GetAllCurrenciesOnDateAsync(It.IsAny<string>(), targetDate, It.IsAny<CancellationToken>()))
-            .Returns(async () => apiDto);
+                a.GetAllCurrentCurrenciesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(() => Task.FromResult(apiDto));
 
         // Act
 
         // 100 потому, что на 10 потоках не всегда корректно тестировалась очистка словаря.
-        var tasks = Enumerable.Range(1, 100).Select(_ =>
-            Task.Run(() => _sut.SecureUpdateCacheAsync(currencyType, targetDate, cancellationToken),
-                cancellationToken));
+        var tasks = Enumerable.Range(1, 100).Select(async _ =>
+        {
+            await using (_dbContext = _fixture.CreateContext())
+            {
+                _sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object, _dbContext,
+                    _lockerDictionary, _memoryCacheMock.Object);
+                
+                await _sut.SecureUpdateCacheAsync(currencyType, null, cancellationToken);
+            }
+        });
         await Task.WhenAll(tasks);
 
         //Assert
         _externalApiMock.Verify(
-            a => a.GetAllCurrenciesOnDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
+            a => a.GetAllCurrentCurrenciesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
         Assert.True(_lockerDictionary.RenewalDatesLockDictionary.IsEmpty);
     }

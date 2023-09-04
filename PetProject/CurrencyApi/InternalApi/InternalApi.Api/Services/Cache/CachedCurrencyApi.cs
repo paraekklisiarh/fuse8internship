@@ -132,8 +132,8 @@ public class CachedCurrencyApi : ICachedCurrencyApi
             return currency;
         }
 
-        var minimalTime = DateTime.UtcNow.AddHours(-_cacheSettings.CacheExpirationHours);
-
+        var minimalTime = DateTimeOffset.UtcNow.AddHours(-_cacheSettings.CacheExpirationHours);
+        
         currency = targetDate is null
             ? await _dbContext.Currencies
                 .Where(c => c.Code == currencyType && c.RateDate >= minimalTime)
@@ -141,7 +141,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
                 .FirstOrDefaultAsync(cancellationToken)
             : await _dbContext.Currencies
                 .Where(c => c.Code == currencyType &&
-                            c.RateDate.Date == targetDate.Value.ToDateTime(new TimeOnly()).Date)
+                            DateOnly.FromDateTime(c.RateDate.Date) == targetDate)
                 .OrderByDescending(c => c.RateDate)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -184,56 +184,27 @@ public class CachedCurrencyApi : ICachedCurrencyApi
         }
 
         /*
-         // Создаст слишком узкое место: получение курса валют на любую дату будет происходить только в одном потоке.
-         await UpdateSemaphore.WaitAsync(cancellationToken);
-        try
-        {
-            // За время ожидания могло произойти обновление данных из API.
-            // Повторный поиск.
-            if (await GetEntityAsync(currencyType, targetDate, cancellationToken) == null)
-                await UpdateCacheAsync(targetDate, cancellationToken);
-        }
-        finally
-        {
-            UpdateSemaphore.Release();
-        }*/
+         * Я попытался создать потокобезопасное обновление кеша: только один поток должен пытаться получить кеш от удаленного API потому,
+         * что токены - конечный ресурс и следует их оптимизировать как можно сильнее.
+         *
+         * Я не успел довести до ума: не реализовано очищение словаря. В тестах вроде бы ко внешнему API обращается один раз.
+         */
 
         // Дата, на которую обновляется кеш
         var updatingDate = targetDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        SemaphoreSlim updateMutex = new(1, 1);
-        try
+
+        
+        // Если сейчас не обновляется кеш на искомую дату, обновить.
+        if (!_cacheUpdateLock.RenewalDatesLockDictionary.TryGetValue(updatingDate, out var updatingMutex))
         {
-            // Если сейчас не обновляется кеш на искомую дату, обновить.
-            if (!_cacheUpdateLock.RenewalDatesLockDictionary.ContainsKey(updatingDate))
+            var updateMutex = new SemaphoreSlim(1, 1);
+            if (_cacheUpdateLock.RenewalDatesLockDictionary.TryAdd(updatingDate, updateMutex))
             {
-                updateMutex = new SemaphoreSlim(1, 1);
-                if (_cacheUpdateLock.RenewalDatesLockDictionary.TryAdd(updatingDate, updateMutex))
-                {
-                    await updateMutex.WaitAsync(cancellationToken);
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {
-                        await UpdateCacheAsync(targetDate, cancellationToken);
-                    }
-                    finally
-                    {
-                        updateMutex.Release();
-                    }
-                }
-            }
-            else
-            {
-                // Если сейчас обновляется кеш на указанную дату, то следует дождаться обновления.
-                updateMutex = _cacheUpdateLock.RenewalDatesLockDictionary
-                    .GetOrAdd(updatingDate, new SemaphoreSlim(1, 1));
                 await updateMutex.WaitAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    // За время ожидания могло произойти обновление данных из API.
-                    // Повторный поиск.
-                    if (await GetEntityAsync(currencyType, targetDate, cancellationToken) == null)
-                        await UpdateCacheAsync(targetDate, cancellationToken);
+                    await UpdateCacheAsync(targetDate, cancellationToken);
                 }
                 finally
                 {
@@ -241,11 +212,25 @@ public class CachedCurrencyApi : ICachedCurrencyApi
                 }
             }
         }
-        finally
+        else
         {
-            if (updateMutex.CurrentCount == 0)
+            // Если сейчас обновляется кеш на указанную дату, то следует дождаться обновления.
+            await updatingMutex.WaitAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                // За время ожидания могло произойти обновление данных из API.
+                // Повторный поиск.
+                if (await GetEntityAsync(currencyType, targetDate, cancellationToken) == null)
+                    await UpdateCacheAsync(targetDate, cancellationToken);
+            }
+            finally
+            {
+                updatingMutex.Release();
                 _cacheUpdateLock.RenewalDatesLockDictionary.TryRemove(updatingDate, out _);
+            }
         }
+
     }
 
     /// <summary>

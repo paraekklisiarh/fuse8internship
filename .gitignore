@@ -368,3 +368,7 @@ PetProject/CurrencyApi/InternalApi.Api/InternalApi.Api.xml
 PetProject/CurrencyApi/PublicApi/PublicApi.xml
 
 PetProject/DockerData/
+
+PetProject/CurrencyApi/qodana.yaml
+
+PetProject/CurrencyApi/InternalApi/InternalApi.Api/InternalApi.Api.xml

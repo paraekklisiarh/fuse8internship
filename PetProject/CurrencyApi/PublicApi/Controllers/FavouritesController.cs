@@ -11,13 +11,13 @@ namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Controllers;
 [Route("favourites/[action]")]
 public class FavouritesController : ControllerBase
 {
-    private readonly FavouriteCurrencyService _favouriteService;
+    private readonly IFavouriteCurrencyService _favouriteService;
 
     /// <summary>
     ///     Управление избранными валютами
     /// </summary>
     /// <param name="favouriteService">Сервис управления избранным</param>
-    public FavouritesController(FavouriteCurrencyService favouriteService)
+    public FavouritesController(IFavouriteCurrencyService favouriteService)
     {
         _favouriteService = favouriteService;
     }
@@ -64,7 +64,7 @@ public class FavouritesController : ControllerBase
         await _favouriteService.AddFavouriteCurrencyAsync(favouriteCurrencyDto, cancellationToken);
 
         var location = Url.Action(nameof(GetFavourite), favouriteCurrencyDto.Name);
-        return Created(location!, favouriteCurrencyDto);
+        return Ok(favouriteCurrencyDto);
     }
 
     /// <summary>

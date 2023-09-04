@@ -5,51 +5,54 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: currency_api
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ../DockerData/postgres/data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5433:${POSTGRES_PORT}"
   
   public_api:
-    container_name: client
+    container_name: ${PUBLIC_API_CONTAINER_NAME}
     image: currencyapi/publicapi:latest
     restart: no
     ports:
-      - "5166:5166"
+      - "5166:${PUBLIC_API_PORT}"
     
     depends_on:
-      - postgres
-      - internal_api
+      postgres:
+        condition: service_started
+      internal_api:
+        condition: service_started
     volumes:
       - ../DockerData/public_api/appsettings.Development.json:/app/appsettings.Development.json
-      - ../DockerData/public_api/logs:/usr/logs
+      - ${HOST_LOGS}public_api/logs:${PUBLIC_API_LOGS}
     environment:
-      - ASPNETCORE_URLS=http://+:5166;
-      - ASPNETCORE_ENVIRONMENT=Development
-      - GrpcUrl=http://internal_api:5000
+      - ASPNETCORE_URLS=PUBLIC_API_ASPNETCORE_URLS
+      - ASPNETCORE_ENVIRONMENT=${PUBLIC_API_ASPNETCORE_ENVIRONMENT}
+      - GrpcUrl=${PUBLIC_API_GRPC_URL}
     build:
       context: .
       dockerfile: PublicApi/Dockerfile
 
   internal_api:
-    container_name: server
+    container_name: ${INTERNAL_API_CONTAINER_NAME}
     image: currencyapi/internalapi:latest
     restart: no
     ports:
-      - "5050:5050"
-      - "5000:5000"
+      - "5050:${INTERNAL_API_REST_PORT}"
+      - "5000:${INTERNAL_API_RPC_PORT}"
     
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
     volumes:
       - ../DockerData/internal_api/appsettings.Development.json:/app/appsettings.Development.json
-      - ../DockerData/internal_api/logs:/usr/logs
+      - HOST_LOGS/internal_api/logs:${INTERNAL_API_LOGS}
     environment:
-      - ASPNETCORE_URLS=http://+:5000;http://+:5050
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=${INTERNAL_API_ASPNETCORE_URLS}
+      - ASPNETCORE_ENVIRONMENT=${INTERNAL_API_ASPNETCORE_ENVIRONMENT}
     build:
       context: .
       dockerfile: InternalApi.Api/Dockerfile

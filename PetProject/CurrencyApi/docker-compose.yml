@@ -1,0 +1,55 @@
+﻿version: '3.9'
+
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: currency_api
+    volumes:
+      - ../DockerData/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+  
+  public_api:
+    container_name: client
+    image: currencyapi/publicapi:latest
+    restart: no
+    ports:
+      - "5166:5166"
+    
+    depends_on:
+      - postgres
+      - internal_api
+    volumes:
+      - ../DockerData/public_api/appsettings.Development.json:/app/appsettings.Development.json
+      - ../DockerData/public_api/logs:/usr/logs
+    environment:
+      - ASPNETCORE_URLS=http://+:5166;
+      - ASPNETCORE_ENVIRONMENT=Development
+      - GrpcUrl=http://internal_api:5000
+    build:
+      context: .
+      dockerfile: PublicApi/Dockerfile
+
+  internal_api:
+    container_name: server
+    image: currencyapi/internalapi:latest
+    restart: no
+    ports:
+      - "5050:5050"
+      - "5000:5000"
+    
+    depends_on:
+      - postgres
+    volumes:
+      - ../DockerData/internal_api/appsettings.Development.json:/app/appsettings.Development.json
+      - ../DockerData/internal_api/logs:/usr/logs
+    environment:
+      - ASPNETCORE_URLS=http://+:5000;http://+:5050
+      - ASPNETCORE_ENVIRONMENT=Development
+    build:
+      context: .
+      dockerfile: InternalApi.Api/Dockerfile

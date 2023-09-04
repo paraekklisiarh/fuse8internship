@@ -7,17 +7,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionF
 		..\ReadMe.md = ..\ReadMe.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Api", "InternalApi.Api\InternalApi.Api.csproj", "{963AFAED-1C79-4643-B304-A2DE5E570003}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Api", "InternalApi\InternalApi.Api\InternalApi.Api.csproj", "{963AFAED-1C79-4643-B304-A2DE5E570003}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "InternalApi", "InternalApi", "{989BA49C-F200-40FE-B4B2-91F8213CA3EA}"
+	ProjectSection(SolutionItems) = preProject
+		InternalApi\Dockerfile = InternalApi\Dockerfile
+		.dockerignore = .dockerignore
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PublicApi", "PublicApi", "{3779733C-3C41-4378-B919-4DA31A2E6756}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Infrastructure", "InternalApi.Infrastructure\InternalApi.Infrastructure.csproj", "{A55C5A49-0FE5-4C2C-A8FB-30AEE9481FFA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Infrastructure", "InternalApi\InternalApi.Infrastructure\InternalApi.Infrastructure.csproj", "{A55C5A49-0FE5-4C2C-A8FB-30AEE9481FFA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Tests", "InternalApi.Tests\InternalApi.Tests.csproj", "{D80D931A-02E3-45EC-B5FE-892C98F92E0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Entities", "InternalApi.Entities\InternalApi.Entities.csproj", "{BC241C86-2DFB-4034-97B9-7CA759CF712D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalApi.Entities", "InternalApi\InternalApi.Entities\InternalApi.Entities.csproj", "{BC241C86-2DFB-4034-97B9-7CA759CF712D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{EAD41DE6-B1D5-42B5-AD33-9BACB8190CA3}"
 EndProject

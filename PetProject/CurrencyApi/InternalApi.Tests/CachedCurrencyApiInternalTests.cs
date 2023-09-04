@@ -1,8 +1,11 @@
-﻿using InternalApi.Contracts;
+﻿using InternalApi.Configuration;
+using InternalApi.Contracts;
 using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
+using InternalApi.Infrastructure.Data.CurrencyContext;
 using InternalApi.Services;
+using InternalApi.Services.Cache;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,7 +34,7 @@ public class CachedCurrencyApiInternalTests : IDisposable
         BaseCurrency = CurrencyType.USD
     };
 
-    public CachedCurrencyApiInternalTests(TestDatabaseFixture fixture)
+    public CachedCurrencyApiInternalTests(TestAppDbContextDatabaseFixture fixture)
     {
         // dbContext mocking
         // DbContextOptions<AppDbContext> dbOptions = new DbContextOptionsBuilder<AppDbContext>()

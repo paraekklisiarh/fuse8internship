@@ -77,9 +77,8 @@ public class Startup
         // grpc client
         services.AddGrpcClient<GetCurrency.GetCurrencyClient>(o =>
             {
-                var uriString = _configuration.GetValue<string>("ExternalApis:CurrencyAPI:BaseUrl");
-                if (uriString != null)
-                    o.Address = new Uri(uriString);
+                var uriString = _configuration.GetValue<string>("GrpcUrl");
+                if (uriString != null) o.Address = new Uri(uriString);
             })
             .AddAuditHandler(audit => audit
                 .IncludeRequestHeaders()

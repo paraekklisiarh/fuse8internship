@@ -7,6 +7,7 @@
         <RootNamespace>Fuse8_ByteMinds.SummerSchool.PublicApi</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
@@ -50,6 +51,13 @@
       </Protobuf>
     </ItemGroup>
 
+
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
 
 
 </Project>

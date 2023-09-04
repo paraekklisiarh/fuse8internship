@@ -1,8 +1,11 @@
-﻿using InternalApi.Contracts;
+﻿using InternalApi.Configuration;
+using InternalApi.Contracts;
 using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure;
+using InternalApi.Infrastructure.Data.CurrencyContext;
 using InternalApi.Services;
+using InternalApi.Services.Cache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -32,9 +35,9 @@ public class CachedCurrencyApiTests : IDisposable
         BaseCurrency = CurrencyType.USD
     };
     
-    public TestDatabaseFixture Fixture { get; }
+    public TestAppDbContextDatabaseFixture Fixture { get; }
 
-    public CachedCurrencyApiTests(TestDatabaseFixture fixture)
+    public CachedCurrencyApiTests(TestAppDbContextDatabaseFixture fixture)
     {
         Fixture = fixture;
         _dbContext = fixture.CreateContext();

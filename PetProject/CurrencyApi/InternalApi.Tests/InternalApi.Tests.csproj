@@ -24,6 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\InternalApi.Api\InternalApi.Api.csproj" />
+      <ProjectReference Include="..\InternalApi\InternalApi.Api\InternalApi.Api.csproj" />
     </ItemGroup>
 
 </Project>

@@ -77,7 +77,7 @@ public class Startup
         // grpc health check client
         services.AddGrpcClient<Health.HealthClient>(o =>
         {
-            var uriString = _configuration.GetValue<string>("ExternalApis:CurrencyAPI:BaseUrl");
+            var uriString = _configuration.GetValue<string>("GrpcUrl");
             if (uriString != null) o.Address = new Uri(uriString);
         }).AddAuditHandler(audit =>
             audit.IncludeRequestHeaders().IncludeRequestBody().IncludeResponseHeaders().IncludeResponseBody()

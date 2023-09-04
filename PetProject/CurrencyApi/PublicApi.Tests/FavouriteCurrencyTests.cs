@@ -31,7 +31,7 @@ public class FavouriteCurrencyTests : IDisposable
 
         Mock<IMapper> mapperMock = new();
         mapperMock.Setup(m => m.Map<FavouriteCurrencyDto>(It.IsAny<FavouriteCurrency>()))
-            .Returns<FavouriteCurrency>((source) => new FavouriteCurrencyDto
+            .Returns<FavouriteCurrency>(source => new FavouriteCurrencyDto
             {
                 Name = source.Name, Currency = source.Currency, BaseCurrency = source.BaseCurrency
             });
@@ -259,7 +259,6 @@ public class FavouriteCurrencyTests : IDisposable
 
         var newName = "edited";
         var editedEntity = new FavouriteCurrency { Name = newName, Currency = "Kzt", BaseCurrency = "Rub" };
-        ;
         var editedEntityDto = new FavouriteCurrencyDto
         {
             Name = editedEntity.Name, Currency = editedEntity.Currency, BaseCurrency = editedEntity.BaseCurrency

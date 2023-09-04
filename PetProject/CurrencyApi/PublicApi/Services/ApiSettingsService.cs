@@ -60,12 +60,11 @@ public class ApiSettingsService : IApiSettingsService
     {
         cancellationToken.ThrowIfCancellationRequested();
         var settings = _dbContext.CurrencyApiSettings.FirstOrDefault();
-        if (settings == null)
-        {
-            settings = new CurrencyApiSetting();
-            await _dbContext.CurrencyApiSettings.AddAsync(settings, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
+        if (settings != null) return settings;
+        
+        settings = new CurrencyApiSetting();
+        await _dbContext.CurrencyApiSettings.AddAsync(settings, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return settings;
     }

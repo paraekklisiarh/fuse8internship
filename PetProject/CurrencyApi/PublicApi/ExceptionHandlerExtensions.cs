@@ -1,5 +1,4 @@
-﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
-using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
+﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;

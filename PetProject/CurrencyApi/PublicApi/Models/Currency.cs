@@ -11,7 +11,7 @@ public class Currency
     ///     Код валюты
     /// </summary>
     [JsonPropertyName("code")]
-    public string Code { get; set; }
+    public required string Code { get; set; }
 
     /// <summary>
     ///     Курс валюты

@@ -63,7 +63,6 @@ public class FavouritesController : ControllerBase
     {
         await _favouriteService.AddFavouriteCurrencyAsync(favouriteCurrencyDto, cancellationToken);
 
-        var location = Url.Action(nameof(GetFavourite), favouriteCurrencyDto.Name);
         return Ok(favouriteCurrencyDto);
     }
 

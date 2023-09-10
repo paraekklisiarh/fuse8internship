@@ -44,7 +44,7 @@ public class Startup
                 // Этим конвертером задаем перевод в строковое занчение
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
-        services.AddDbContext<AppDbContext>((_, builder) =>
+        services.AddDbContext<AppDbContext>(builder =>
         {
             var currentAssemblyName = typeof(AppDbContext).Assembly.FullName;
             var dbConnectionString = _configuration.GetConnectionString("CurrencyApi");

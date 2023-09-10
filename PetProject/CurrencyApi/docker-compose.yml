@@ -29,7 +29,7 @@ services:
       - ../DockerData/public_api/appsettings.${PUBLIC_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${PUBLIC_API_ASPNETCORE_ENVIRONMENT}.json
       - ${HOST_LOGS}public_api/logs:${PUBLIC_API_LOGS}
     environment:
-      - ASPNETCORE_URLS=PUBLIC_API_ASPNETCORE_URLS
+      - ASPNETCORE_URLS=${PUBLIC_API_ASPNETCORE_URLS}
       - ASPNETCORE_ENVIRONMENT=${PUBLIC_API_ASPNETCORE_ENVIRONMENT}
       - GrpcUrl=${PUBLIC_API_GRPC_URL}
     build:

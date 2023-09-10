@@ -49,7 +49,7 @@ services:
         condition: service_started
     volumes:
       - ../DockerData/internal_api/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json
-      - HOST_LOGS/internal_api/logs:${INTERNAL_API_LOGS}
+      - ${HOST_LOGS}/internal_api/logs:${INTERNAL_API_LOGS}
     environment:
       - ASPNETCORE_URLS=${INTERNAL_API_ASPNETCORE_URLS}
       - ASPNETCORE_ENVIRONMENT=${INTERNAL_API_ASPNETCORE_ENVIRONMENT}

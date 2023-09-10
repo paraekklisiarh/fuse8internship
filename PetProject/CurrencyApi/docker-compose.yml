@@ -12,6 +12,13 @@ services:
       - ../DockerData/postgres/data:/var/lib/postgresql/data
     ports:
       - "5433:${POSTGRES_PORT}"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
   
   public_api:
     container_name: ${PUBLIC_API_CONTAINER_NAME}
@@ -22,7 +29,7 @@ services:
     
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       internal_api:
         condition: service_started
     volumes:
@@ -46,7 +53,7 @@ services:
     
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ../DockerData/internal_api/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json
       - ${HOST_LOGS}/internal_api/logs:${INTERNAL_API_LOGS}

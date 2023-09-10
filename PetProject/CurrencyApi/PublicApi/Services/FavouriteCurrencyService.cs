@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
@@ -134,9 +135,11 @@ public class FavouriteCurrencyService : IFavouriteCurrencyService
     {
         cancellationToken.ThrowIfCancellationRequested();
         
-        var entities = await _dbContext.FavouriteCurrencies.ToListAsync(cancellationToken);
+        var entities = await _dbContext.FavouriteCurrencies
+            .ProjectTo<FavouriteCurrencyDto>(_mapper.ConfigurationProvider)
+            .ToListAsync(cancellationToken);
 
-        return entities.Select(entity => _mapper.Map<FavouriteCurrencyDto>(entity));
+        return entities;
     }
 
     /// <inheritdoc />

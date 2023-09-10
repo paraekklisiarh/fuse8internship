@@ -18,7 +18,7 @@ public static class InfrastructureExtensions
     /// <returns>Коллекция сервисов с зарегистрированной базой данных.</returns>
     public static IServiceCollection RegisterDataBase(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<AppDbContext>((_, options) =>
+        services.AddDbContext<AppDbContext>(options =>
         {
             var currentAssemblyName = typeof(AppDbContext).Assembly.FullName;
             var dbConnectionString = configuration.GetConnectionString("CurrencyApi");

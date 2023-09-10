@@ -37,18 +37,15 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
     /// <exception cref="OperationCanceledException">Выбрасывается, если операция была отменена.</exception>
     public override async Task<CurrencyDTO> GetCurrency(Code request, ServerCallContext context)
     {
-        while (!context.CancellationToken.IsCancellationRequested)
-        {
-            var couldParse = Enum.TryParse(request.CurrencyType.ToString(), true, out CurrencyType currencyType);
-            if (!couldParse && !Enum.IsDefined(typeof(CurrencyType), currencyType))
-                throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
+        context.CancellationToken.ThrowIfCancellationRequested();
 
-            // Получение DTO из кеша или API
-            var currency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
-            return ParseDto(currency);
-        }
+        var couldParse = Enum.TryParse(request.CurrencyType.ToString(), true, out CurrencyType currencyType);
+        if (!couldParse && !Enum.IsDefined(typeof(CurrencyType), currencyType))
+            throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
 
-        throw new OperationCanceledException(context.CancellationToken);
+        // Получение DTO из кеша или API
+        var currency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
+        return ParseDto(currency);
     }
 
     /// <summary>
@@ -60,23 +57,20 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
     /// <exception cref="OperationCanceledException">Выбрасывается, если операция была отменена.</exception>
     public override async Task<CurrencyDTO> GetCurrencyOnDate(CodeAndDate request, ServerCallContext context)
     {
-        while (!context.CancellationToken.IsCancellationRequested)
-        {
-            // Парсинг даты в UTC
-            var date = request.Date.ToDateTime().ToUniversalTime();
-            if (date > DateTime.UtcNow) throw new ValidationException();
-            var currencyDate = DateOnly.FromDateTime(date);
-            var couldParse = Enum.TryParse(request.CurrencyType.ToString(), true, out CurrencyType currencyType);
-            if (!couldParse && !Enum.IsDefined(typeof(CurrencyType), currencyType))
-                throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
+        context.CancellationToken.ThrowIfCancellationRequested();
 
-            // Получение DTO из кеша или API
-            var currency = await _currencyCacheService.GetCurrencyOnDateAsync(
-                currencyType, currencyDate, context.CancellationToken);
-            return ParseDto(currency);
-        }
+        // Парсинг даты в UTC
+        var date = request.Date.ToDateTime().ToUniversalTime();
+        if (date > DateTime.UtcNow) throw new ValidationException();
+        var currencyDate = DateOnly.FromDateTime(date);
+        var couldParse = Enum.TryParse(request.CurrencyType.ToString(), true, out CurrencyType currencyType);
+        if (!couldParse && !Enum.IsDefined(typeof(CurrencyType), currencyType))
+            throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");
 
-        throw new OperationCanceledException(context.CancellationToken);
+        // Получение DTO из кеша или API
+        var currency = await _currencyCacheService.GetCurrencyOnDateAsync(
+            currencyType, currencyDate, context.CancellationToken);
+        return ParseDto(currency);
     }
 
     /// <summary>
@@ -88,13 +82,13 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
     /// <exception cref="OperationCanceledException">Выбрасывается, если операция была отменена.</exception>
     public override async Task<Settings> GetSettings(Empty request, ServerCallContext context)
     {
-        while (!context.CancellationToken.IsCancellationRequested)
-            return new Settings
-            {
-                BaseCurrency = _currencyCacheSettings.BaseCurrency.ToString(),
-                NewRequestsAvailable = await _currencyApi.IsNewRequestsAvailable(context.CancellationToken)
-            };
-        throw new OperationCanceledException(context.CancellationToken);
+        context.CancellationToken.ThrowIfCancellationRequested();
+
+        return new Settings
+        {
+            BaseCurrency = _currencyCacheSettings.BaseCurrency.ToString(),
+            NewRequestsAvailable = await _currencyApi.IsNewRequestsAvailable(context.CancellationToken)
+        };
     }
 
     /// <summary>
@@ -124,12 +118,15 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
         ServerCallContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
+        
         var couldParseBaseType = Enum.TryParse(request.BaseCurrencyType.ToString(), out CurrencyType baseCurrencyType);
         if (!couldParseBaseType && !Enum.IsDefined(typeof(CurrencyType), baseCurrencyType))
             throw new ArgumentException($"Тип валюты {request.BaseCurrencyType} не поддерживается");
+        
         var couldParseCurrencyType = Enum.TryParse(request.CurrencyType.ToString(), out CurrencyType currencyType);
         if (!couldParseCurrencyType && !Enum.IsDefined(typeof(CurrencyType), currencyType))
             throw new ArgumentException($"Тип валюты {request.CurrencyType} не поддерживается");
+        
         if (baseCurrencyType == _currencyCacheSettings.BaseCurrency)
         {
             var currency = await _currencyCacheService.GetCurrentCurrencyAsync(currencyType, context.CancellationToken);
@@ -153,9 +150,11 @@ public class GrpcCurrencyService : GetCurrency.GetCurrencyBase
         ServerCallContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
+        
         var couldParseBaseType = Enum.TryParse(request.BaseCurrencyType.ToString(), out CurrencyType baseCurrencyType);
         if (!couldParseBaseType && !Enum.IsDefined(typeof(CurrencyType), baseCurrencyType))
             throw new ArgumentException($"Тип валюты{request.BaseCurrencyType} не поддерживается");
+        
         var couldParseCurrencyType = Enum.TryParse(request.CurrencyType.ToString(), out CurrencyType currencyType);
         if (!couldParseCurrencyType && !Enum.IsDefined(typeof(CurrencyType), currencyType))
             throw new ArgumentException($"Тип валюты{request.CurrencyType} не поддерживается");

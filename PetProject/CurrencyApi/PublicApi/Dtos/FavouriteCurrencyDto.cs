@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Fuse8_ByteMinds.SummerSchool.PublicApi.Attributes;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services.Mapper;
 
@@ -17,12 +17,12 @@ public class FavouriteCurrencyDto : IMapFrom<FavouriteCurrency>, IMapTo<Favourit
     /// <summary>
     ///     Тип валюты
     /// </summary>
-    [RegularExpression("[A-Z]{3}")]
+    [CurrencyCode]
     public required string Currency { get; set; }
 
     /// <summary>
     ///     Базовая валюта
     /// </summary>
-    [RegularExpression("[A-Z]{3}")]
+    [CurrencyCode]
     public required string BaseCurrency { get; set; }
 }

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Attributes;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 
@@ -16,7 +17,7 @@ public class CurrencyApiSetting
     /// <summary>
     ///     Валюта по умолчанию
     /// </summary>
-    [RegularExpression("[A-Z]{3}")]
+    [CurrencyCode]
     public string? DefaultCurrency { get; set; }
 
     /// <summary>

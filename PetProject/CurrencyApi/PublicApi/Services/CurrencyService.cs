@@ -1,200 +1,143 @@
-﻿// TODO: Сервис разросся. Выдели взаимодействие с сервером и валидацию ответов в отдельный класс.
-
-using System.Net;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
+﻿using System.Globalization;
+using CurrencyApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
-using Microsoft.Extensions.Options;
+using Google.Protobuf.WellKnownTypes;
+using Enum = System.Enum;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
 
+/// <summary>
+///     Курсы валют
+/// </summary>
 public interface ICurrencyService
 {
-    public Task<Currency> GetCurrency(string currencyCode);
-
-    public Task<Currency> GetDefaultCurrency();
-
-    public Task<Currency> GetCurrencyOnDate(string code, string date);
-
-    public Task<SettingsDto> GetSettings();
-}
-
-public class CurrencyService : ICurrencyService
-{
-    private readonly CurrencyApiSettings _apiConfiguration;
-
-    private static HttpClient _httpClient = null!;
-
-    public CurrencyService(IOptionsSnapshot<CurrencyApiSettings> configuration, HttpClient httpClient)
-    {
-        _apiConfiguration = configuration.Value;
-        _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri(_apiConfiguration.BaseUrl);
-        _httpClient.DefaultRequestHeaders.Add("apikey", _apiConfiguration.ApiKey);
-    }
-
     /// <summary>
     ///     Получение из внешнего API валюты по заданному коду
     /// </summary>
     /// <param name="currencyCode">Код валюты</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>Объект <see cref="Currency" /></returns>
-    public async Task<Currency> GetCurrency(string currencyCode)
-    {
-        await IsRequestLimitNotZero();
-
-        _httpClient.DefaultRequestHeaders.Add("base_currency", _apiConfiguration.BaseCurrency);
-
-        using var response = await _httpClient.GetAsync("latest?currencies=" + currencyCode);
-        if (response.StatusCode is HttpStatusCode.UnprocessableEntity)
-            throw new CurrencyNotFoundException("Валюта с таким кодом не найдена.");
-
-        response.EnsureSuccessStatusCode();
-
-        var currency = await ParseCurrencyFromApiResponse(response, currencyCode);
-        return currency;
-    }
+    public Task<Currency> GetCurrencyAsync(CurrencyTypeDTO currencyCode, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Получение валюты с кодом по умолчанию
     /// </summary>
     /// <returns>Объект <see cref="Currency" /></returns>
-    public async Task<Currency> GetDefaultCurrency()
-    {
-        await IsRequestLimitNotZero();
-        var currencyCode = _apiConfiguration.DefaultCurrency;
-
-        _httpClient.DefaultRequestHeaders.Add("base_currency", currencyCode);
-
-        using var response = await _httpClient.GetAsync("latest?currencies=" + currencyCode);
-        if (response.StatusCode is HttpStatusCode.UnprocessableEntity)
-            throw new CurrencyNotFoundException("Валюта с таким кодом не найдена.");
-
-        response.EnsureSuccessStatusCode();
-
-        var currency = await ParseCurrencyFromApiResponse(response, currencyCode!);
-
-        return currency;
-    }
+    public Task<Currency> GetDefaultCurrencyAsync(CancellationToken cancellationToken);
 
     /// <summary>
     ///     Получение курса валюты на заданную дату
     /// </summary>
     /// <param name="currencyCode">Код валюты</param>
     /// <param name="date">Дата, курс на которую нужно получить, формата YYYY-MM-DD</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>Объект <see cref="Currency" /></returns>
-    public async Task<Currency> GetCurrencyOnDate(string currencyCode, string date)
-    {
-        await IsRequestLimitNotZero();
-
-        using var response = await _httpClient.GetAsync(
-            "latest?currencies=" + currencyCode + "&&date=" + date);
-        if (response.StatusCode is HttpStatusCode.UnprocessableEntity)
-            throw new CurrencyNotFoundException("Валюта с таким кодом не найдена.");
-
-        response.EnsureSuccessStatusCode();
-
-        var currency = await ParseCurrencyFromApiResponse(response, currencyCode);
-        return currency;
-    }
+    public Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date,
+        CancellationToken cancellationToken);
 
     /// <summary>
-    ///     Получение текущих настроек API
+    ///     Возвращает настройки grpc-сервера
     /// </summary>
-    /// <returns>Объект <see cref="SettingsDto" />, содержащий актуальные настройки API</returns>
-    public async Task<SettingsDto> GetSettings()
-    {
-        var apiStatus = await RequestApiStatus();
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Настройки grpc-сервера</returns>
+    public Task<Settings> GetCurrencyServerSettingsAsync(CancellationToken cancellationToken);
+}
 
-        var dto = new SettingsDto
+/// <inheritdoc />
+public class CurrencyService : ICurrencyService
+{
+    private readonly GetCurrency.GetCurrencyClient _getCurrencyClient;
+    private readonly IApiSettingsService _settings;
+
+    /// <summary>
+    ///     Курсы валют
+    /// </summary>
+    /// <param name="getCurrencyClient">gRPC клиент</param>
+    /// <param name="settings">Настройки Api</param>
+    public CurrencyService(GetCurrency.GetCurrencyClient getCurrencyClient, IApiSettingsService settings)
+    {
+        _getCurrencyClient = getCurrencyClient;
+        _settings = settings;
+    }
+
+    /// <inheritdoc />
+    public async Task<Currency> GetCurrencyAsync(CurrencyTypeDTO currencyCode, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var request = new Code
         {
-            DefaultCurrency = _apiConfiguration.DefaultCurrency,
-            BaseCurrency = _apiConfiguration.BaseCurrency,
-            CurrencyRoundCount = Convert.ToInt32(_apiConfiguration.CurrencyRoundCount),
-            RequestCount = apiStatus.Quotas.Month.Used,
-            RequestLimit = apiStatus.Quotas.Month.Total
+            CurrencyType = currencyCode
         };
 
-        return dto;
-    }
+        var dto = await _getCurrencyClient.GetCurrencyAsync(request, cancellationToken: cancellationToken);
 
-    /// <summary>
-    ///     Получить статус внешнего API
-    /// </summary>
-    /// <returns>
-    ///     Возвращает объект <see cref="ApiStatusDto"/>, содержащий сведения о внешнем API
-    /// </returns>
-    private async Task<ApiStatusDto> RequestApiStatus()
-    {
-        using var response = await _httpClient.GetAsync("status");
-        response.EnsureSuccessStatusCode();
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        
-        var apiStatus = JsonSerializer.Deserialize<ApiStatusDto>(responseBody);
-
-        return apiStatus ?? throw new InvalidOperationException();
-    }
-
-    /// <summary>
-    ///     Проверяет, равно ли количество доступных токенов нулю. Если равно - исключение.
-    /// </summary>
-    /// <exception cref="ApiRequestLimitException">Количество доступных токенов равно нулю.</exception>
-    private async Task IsRequestLimitNotZero()
-    {
-        var apiStatus = await RequestApiStatus();
-
-        if (apiStatus.Quotas.Month.Remaining <= apiStatus.Quotas.Month.Used)
-        {
-            throw new ApiRequestLimitException("Свободные токены CurrencyAPI закончились");
-        }
-    }
-
-    /// <summary>
-    ///     Округление курса валюты до знака из конфигурации
-    /// </summary>
-    /// <param name="value">Округляемое значение</param>
-    /// <returns>Округленное до знака после запятой из конфигурации значение</returns>
-    private decimal Rounding(decimal value)
-    {
-        return Math.Round(value, Convert.ToInt32(_apiConfiguration.CurrencyRoundCount));
-    }
-
-    /// <summary>
-    ///     Парсинг <see cref="Currency" /> из <see cref="HttpResponseMessage" />
-    /// </summary>
-    /// <param name="response">
-    ///     <see cref="HttpResponseMessage" />
-    /// </param>
-    /// <param name="code">Код валюты</param>
-    /// <returns>Объект <see cref="Currency" /></returns>
-    /// <exception cref="BadHttpRequestException">
-    ///     Объект <see cref="Currency" /> не найден, получены неверные данные из вызывающего метода
-    /// </exception>
-    private async Task<Currency> ParseCurrencyFromApiResponse(HttpResponseMessage response, string code)
-    {
-        var responseApiBody = await response.Content.ReadAsStringAsync();
-
-        var apiDto = JsonSerializer.Deserialize<CurrencyApiDto>(responseApiBody);
-
-        var currency = apiDto!.Data[code];
-
-        currency.Value = Rounding(currency.Value);
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
 
         return currency;
     }
-}
 
-internal class CurrencyNotFoundException : Exception
-{
-    public CurrencyNotFoundException(string message) : base(message)
+    /// <inheritdoc />
+    public async Task<Currency> GetDefaultCurrencyAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        Enum.TryParse(await _settings.GetDefaultCurrencyAsync(cancellationToken), true,
+            out CurrencyTypeDTO currencyType);
+
+        var request = new Code
+        {
+            CurrencyType = currencyType
+        };
+        var dto = await _getCurrencyClient.GetCurrencyAsync(request, cancellationToken: cancellationToken);
+
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
+
+        return currency;
     }
-}
 
-public class ApiRequestLimitException : Exception
-{
-    public ApiRequestLimitException(string? message) : base(message)
+    /// <inheritdoc />
+    public async Task<Currency> GetCurrencyOnDateAsync(CurrencyTypeDTO currencyCode, DateOnly date,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        var request = new CodeAndDate
+        {
+            CurrencyType = currencyCode,
+            Date = date.ToDateTime(new TimeOnly()).ToUniversalTime().ToTimestamp()
+        };
+        var dto = await _getCurrencyClient.GetCurrencyOnDateAsync(request, cancellationToken: cancellationToken);
+
+        var currency = await ParseCurrencyDto(dto, cancellationToken);
+
+        return currency;
+    }
+
+    /// <inheritdoc />
+    public async Task<Settings> GetCurrencyServerSettingsAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        var settings = await _getCurrencyClient.GetSettingsAsync(new Empty(), cancellationToken: cancellationToken);
+
+        return settings;
+    }
+
+    // ToDo: Этот метод дублирует такой же в FavouriteCurrencyService. Выделить в отдельный сервис?
+    /// <summary>
+    ///     Парсинг Dto
+    /// </summary>
+    /// <param name="dto">Currency Dto</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Объект <see cref="Currency" /></returns>
+    private async Task<Currency> ParseCurrencyDto(CurrencyDTO dto, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        var value = decimal.Parse(dto.Value, CultureInfo.InvariantCulture);
+
+        return new Currency
+        {
+            Code = dto.CurrencyType.ToString().ToUpper(),
+            Value = Math.Round(value, await _settings.GetCurrencyRoundCountAsync(cancellationToken))
+        };
     }
 }

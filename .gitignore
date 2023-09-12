@@ -360,3 +360,17 @@ MigrationBackup/
 dist/
 
 Homework3/CurrencyApi/PublicApi/PublicApi.xml
+
+PetProject/CurrencyApi/InternalApi.Api/InternalApi.xml
+
+PetProject/CurrencyApi/InternalApi.Api/InternalApi.Api.xml
+
+PetProject/CurrencyApi/PublicApi/PublicApi.xml
+
+PetProject/DockerData/
+
+PetProject/CurrencyApi/qodana.yaml
+
+PetProject/CurrencyApi/InternalApi/InternalApi.Api/InternalApi.Api.xml
+
+PetProject/CurrencyApi/.env

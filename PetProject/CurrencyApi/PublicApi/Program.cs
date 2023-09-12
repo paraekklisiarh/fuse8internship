@@ -1,9 +1,27 @@
 using Fuse8_ByteMinds.SummerSchool.PublicApi;
-using Microsoft.AspNetCore;
+using Microsoft.EntityFrameworkCore;
 
-var webHost = WebHost
+var webHost = Host
     .CreateDefaultBuilder(args)
-    .UseStartup<Startup>()
+    .ConfigureWebHostDefaults(
+        webBuilder =>
+        {
+            webBuilder.UseStartup<Startup>();
+        })
     .Build();
 
+await MigrateDatabase(webHost);
+
 await webHost.RunAsync();
+
+
+async Task MigrateDatabase(IHost webApplication)
+{
+    using var scope = webApplication.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    if (context == null)
+        throw new Exception("Cannot initialize the database context");
+
+    await context.Database.MigrateAsync();
+}

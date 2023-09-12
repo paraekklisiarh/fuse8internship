@@ -1,5 +1,8 @@
 ﻿namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 
+/// <summary>
+/// Текущие настройки API
+/// </summary>
 public class SettingsDto
 {
     /// <summary>
@@ -13,17 +16,12 @@ public class SettingsDto
     public string? BaseCurrency { get; set; }
 
     /// <summary>
-    ///     общее количество доступных запросов, полученное от внешнего API
-    /// </summary>
-    public int RequestLimit { get; set; }
-
-    /// <summary>
     ///     количество использованных запросов, полученное от внешнего API
     /// </summary>
-    public int RequestCount { get; set; }
+    public bool? NewRequestsAvailable { get; set; }
 
     /// <summary>
     ///     Количество знаков после запятой, до которого следует округлять значение курса валют
     /// </summary>
-    public int CurrencyRoundCount { get; set; }
+    public int? CurrencyRoundCount { get; set; }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Attributes;
 
 namespace Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 
@@ -11,7 +12,8 @@ public class Currency
     ///     Код валюты
     /// </summary>
     [JsonPropertyName("code")]
-    public string Code { get; set; }
+    [CurrencyCode]
+    public required string Code { get; set; }
 
     /// <summary>
     ///     Курс валюты

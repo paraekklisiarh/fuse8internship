@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ../DockerData/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5433:${POSTGRES_PORT}"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  
+  public_api:
+    container_name: ${PUBLIC_API_CONTAINER_NAME}
+    image: currencyapi/publicapi:latest
+    restart: no
+    ports:
+      - "5166:${PUBLIC_API_PORT}"
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      internal_api:
+        condition: service_started
+    volumes:
+      - ../DockerData/public_api/appsettings.${PUBLIC_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${PUBLIC_API_ASPNETCORE_ENVIRONMENT}.json
+      - ${HOST_LOGS}public_api/logs:${PUBLIC_API_LOGS}
+    environment:
+      - ASPNETCORE_URLS=${PUBLIC_API_ASPNETCORE_URLS}
+      - ASPNETCORE_ENVIRONMENT=${PUBLIC_API_ASPNETCORE_ENVIRONMENT}
+      - GrpcUrl=${PUBLIC_API_GRPC_URL}
+    build:
+      context: .
+      dockerfile: PublicApi/Dockerfile
+
+  internal_api:
+    container_name: ${INTERNAL_API_CONTAINER_NAME}
+    image: currencyapi/internalapi:latest
+    restart: no
+    ports:
+      - "5050:${INTERNAL_API_REST_PORT}"
+      - "5000:${INTERNAL_API_RPC_PORT}"
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../DockerData/internal_api/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json:/app/appsettings.${INTERNAL_API_ASPNETCORE_ENVIRONMENT}.json
+      - ${HOST_LOGS}/internal_api/logs:${INTERNAL_API_LOGS}
+    environment:
+      - ASPNETCORE_URLS=${INTERNAL_API_ASPNETCORE_URLS}
+      - ASPNETCORE_ENVIRONMENT=${INTERNAL_API_ASPNETCORE_ENVIRONMENT}
+    build:
+      context: .
+      dockerfile: InternalApi.Api/Dockerfile

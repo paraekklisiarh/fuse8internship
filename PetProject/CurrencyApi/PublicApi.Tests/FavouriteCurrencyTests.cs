@@ -5,6 +5,7 @@ using Fuse8_ByteMinds.SummerSchool.PublicApi;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Dtos;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Models;
 using Fuse8_ByteMinds.SummerSchool.PublicApi.Services;
+using Fuse8_ByteMinds.SummerSchool.PublicApi.Services.Mapper;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -29,23 +30,16 @@ public class FavouriteCurrencyTests : IDisposable
         _currencyApiSettingsMock.Setup(m => m.GetCurrencyRoundCountAsync(It.IsAny<CancellationToken>()))
             .Returns(() => Task.FromResult((int)_setting.CurrencyRoundCount!));
 
-        Mock<IMapper> mapperMock = new();
-        mapperMock.Setup(m => m.Map<FavouriteCurrencyDto>(It.IsAny<FavouriteCurrency>()))
-            .Returns<FavouriteCurrency>(source => new FavouriteCurrencyDto
-            {
-                Name = source.Name, Currency = source.Currency, BaseCurrency = source.BaseCurrency
-            });
-        mapperMock.Setup(m => m.Map<FavouriteCurrency>(It.IsAny<FavouriteCurrencyDto>()))
-            .Returns<FavouriteCurrencyDto>(source => new FavouriteCurrency
-            {
-                Name = source.Name, Currency = source.Currency, BaseCurrency = source.BaseCurrency
-            });
-
+        IMapper mapperMock = new  MapperConfiguration(cfg =>
+        {
+            cfg.AddProfile<ApplicationProfile>();
+        }).CreateMapper();
+        
         var dbOptions = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _mockDbContext = new AppDbContext(dbOptions);
         _sut = new FavouriteCurrencyService(_mockDbContext, _getCurrencyClientMock.Object,
-            _currencyApiSettingsMock.Object, mapperMock.Object);
+            _currencyApiSettingsMock.Object, mapperMock);
     }
 
     public void Dispose()

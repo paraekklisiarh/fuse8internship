@@ -1,4 +1,5 @@
-﻿using InternalApi.Entities;
+﻿using System.Collections.Concurrent;
+using InternalApi.Entities;
 
 namespace InternalApi;
 
@@ -26,12 +27,12 @@ public interface IInternalQueue<T>
 /// </summary>
 public class InternalCurrencyConversionQueue : IInternalQueue<CurrencyConversionTask>
 {
-    private readonly Queue<CurrencyConversionTask?> _queue;
+    private readonly ConcurrentQueue<CurrencyConversionTask?> _queue;
 
     /// <inheritdoc cref="InternalCurrencyConversionQueue" />
     public InternalCurrencyConversionQueue()
     {
-        _queue = new Queue<CurrencyConversionTask?>();
+        _queue = new ConcurrentQueue<CurrencyConversionTask?>();
     }
 
     /// <summary>

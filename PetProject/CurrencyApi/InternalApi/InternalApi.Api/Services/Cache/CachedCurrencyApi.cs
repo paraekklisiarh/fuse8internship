@@ -186,8 +186,7 @@ public class CachedCurrencyApi : ICachedCurrencyApi
         /*
          * Я попытался создать потокобезопасное обновление кеша: только один поток должен пытаться получить кеш от удаленного API потому,
          * что токены - конечный ресурс и следует их оптимизировать как можно сильнее.
-         *
-         * Я не успел довести до ума: не реализовано очищение словаря. В тестах вроде бы ко внешнему API обращается один раз.
+         * Мне не нравится это решение. Но оно, кажется, работает.
          */
 
         // Дата, на которую обновляется кеш
@@ -227,7 +226,13 @@ public class CachedCurrencyApi : ICachedCurrencyApi
             finally
             {
                 updatingMutex.Release();
-                _cacheUpdateLock.RenewalDatesLockDictionary.TryRemove(updatingDate, out _);
+                
+                //Если семафор никем не ожидается - очистить.
+                if (updatingMutex.CurrentCount == 1)
+                {
+                    _cacheUpdateLock.RenewalDatesLockDictionary.TryRemove(updatingDate, out _);
+                }
+                
             }
         }
 

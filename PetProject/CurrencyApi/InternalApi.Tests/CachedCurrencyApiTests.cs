@@ -4,6 +4,7 @@ using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure.Data.CurrencyContext;
 using InternalApi.Services.Cache;
+using InternalApi.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -12,7 +13,7 @@ using Moq;
 
 namespace InternalApi.Tests;
 
-[Collection("TransactionalTests")]
+[Collection("Container Collection")]
 public class CachedCurrencyApiTests : IDisposable
 {
     private readonly CachedCurrencyApi _sut;
@@ -22,21 +23,19 @@ public class CachedCurrencyApiTests : IDisposable
     private readonly Mock<IOptionsMonitor<CurrencyCacheSettings>> _cacheOptionsMock = new();
     private readonly RenewalDatesDictionary _lockerDictionary = new();
     private readonly AppDbContext _dbContext;
-    private readonly TestAppDbContextDatabaseFixture _fixture;
+    private readonly DatabaseFixture _fixture;
 
     private readonly CurrencyCacheSettings _cacheSettingsMock = new()
     {
         CacheExpirationHours = 24, BaseCurrency = CurrencyType.USD
     };
 
-    public TestAppDbContextDatabaseFixture Fixture { get; }
 
-    public CachedCurrencyApiTests(TestAppDbContextDatabaseFixture fixture)
+    public CachedCurrencyApiTests(DatabaseFixture fixture)
     {
-        Fixture = fixture;
         _fixture = fixture;
 
-        _dbContext = fixture.CreateContext();
+        _dbContext = fixture.CreateAppContext();
         _cacheOptionsMock.Setup(o => o.CurrentValue).Returns(_cacheSettingsMock);
         object? expectedOut = new();
         _memoryCacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out expectedOut)).Returns(true);
@@ -48,7 +47,7 @@ public class CachedCurrencyApiTests : IDisposable
 
     public void Dispose()
     {
-        Fixture.Cleanup();
+        _fixture.Cleanup();
     }
 
     [Fact]
@@ -229,7 +228,7 @@ public class CachedCurrencyApiTests : IDisposable
         
         var tasks = Enumerable.Range(1, 100).Select(async _ =>
         {
-            await using var dbContext = _fixture.CreateContext();
+            await using var dbContext = _fixture.CreateAppContext();
             sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object,
                 dbContext, lockerDictionary, _memoryCacheMock.Object);
 
@@ -267,7 +266,7 @@ public class CachedCurrencyApiTests : IDisposable
         
         var tasks = Enumerable.Range(1, 100).Select(async _ =>
         {
-            await using var dbContext = _fixture.CreateContext();
+            await using var dbContext = _fixture.CreateAppContext();
             sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object,
                 dbContext, lockerDictionary, _memoryCacheMock.Object);
 

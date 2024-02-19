@@ -4,6 +4,7 @@ using InternalApi.Dtos;
 using InternalApi.Entities;
 using InternalApi.Infrastructure.Data.CurrencyContext;
 using InternalApi.Services.Cache;
+using InternalApi.Tests.Fixtures;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ namespace InternalApi.Tests;
 
 // Я написал эти тесты для внутренних методов сервиса кэша, чтобы убедиться в их правильной работе.
 
-[Collection("TransactionalTests")]
+[Collection("Container Collection")]
 public class CachedCurrencyApiInternalTests : IDisposable
 {
     private CachedCurrencyApi _sut;
@@ -23,18 +24,18 @@ public class CachedCurrencyApiInternalTests : IDisposable
     private readonly Mock<IOptionsMonitor<CurrencyCacheSettings>> _cacheOptionsMock = new();
     private readonly RenewalDatesDictionary _lockerDictionary = new();
     private AppDbContext _dbContext;
-    private TestAppDbContextDatabaseFixture _fixture;
+    private DatabaseFixture _fixture;
 
     private readonly CurrencyCacheSettings _cacheSettingsMock = new()
     {
         CacheExpirationHours = 24, BaseCurrency = CurrencyType.USD
     };
 
-    public CachedCurrencyApiInternalTests(TestAppDbContextDatabaseFixture fixture)
+    public CachedCurrencyApiInternalTests(DatabaseFixture fixture)
     {
         _fixture = fixture;
         _cacheOptionsMock.Setup(o => o.CurrentValue).Returns(_cacheSettingsMock);
-        _dbContext = fixture.CreateContext();
+        _dbContext = fixture.CreateAppContext();
         object? expectedOut = new();
         _memoryCacheMock.Setup(c => c.TryGetValue(It.IsAny<object>(), out expectedOut)).Returns(true);
         var cacheEntry = Mock.Of<ICacheEntry>();
@@ -46,6 +47,7 @@ public class CachedCurrencyApiInternalTests : IDisposable
     public void Dispose()
     {
         _dbContext.Dispose();
+        _fixture.Cleanup();
     }
 
     [Fact]
@@ -135,7 +137,7 @@ public class CachedCurrencyApiInternalTests : IDisposable
         // 100 потому, что на 10 потоках не всегда корректно тестировалась очистка словаря.
         var tasks = Enumerable.Range(1, 100).Select(async _ =>
         {
-            await using (_dbContext = _fixture.CreateContext())
+            await using (_dbContext = _fixture.CreateAppContext())
             {
                 _sut = new CachedCurrencyApi(_loggerMock.Object, _externalApiMock.Object, _cacheOptionsMock.Object, _dbContext,
                     _lockerDictionary, _memoryCacheMock.Object);

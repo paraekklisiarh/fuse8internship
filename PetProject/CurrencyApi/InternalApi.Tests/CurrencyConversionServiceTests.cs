@@ -3,6 +3,7 @@ using InternalApi.Entities;
 using InternalApi.Infrastructure.Data.CurrencyContext;
 using InternalApi.Services;
 using InternalApi.Services.CurrencyConversion;
+using InternalApi.Tests.Fixtures;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,12 +13,12 @@ using ILogger = Serilog.ILogger;
 
 namespace InternalApi.Tests;
 
-[Collection("TransactionalTests")]
+[Collection("Container Collection")]
 public class CurrencyConversionServiceTests : IDisposable
 {
     private readonly ICurrencyConversionService _sut;
     private readonly Mock<ILogger<CurrencyConversionService>> _loggerMock;
-    private TestAppDbContextDatabaseFixture AppDbContextDatabaseFixture { get; }
+    private DatabaseFixture AppDbContextDatabaseFixture { get; }
 
     private readonly AppDbContext _appDbContext;
 
@@ -33,7 +34,7 @@ public class CurrencyConversionServiceTests : IDisposable
     };
 
     public CurrencyConversionServiceTests(
-        TestAppDbContextDatabaseFixture appDbContextDatabaseFixture
+        DatabaseFixture appDbContextDatabaseFixture
     )
     {
         _cacheOptionsMock
@@ -41,7 +42,7 @@ public class CurrencyConversionServiceTests : IDisposable
             .Returns(_cacheSettingsMock);
 
         AppDbContextDatabaseFixture = appDbContextDatabaseFixture;
-        _appDbContext = AppDbContextDatabaseFixture.CreateContext();
+        _appDbContext = AppDbContextDatabaseFixture.CreateAppContext();
 
         _configurationMock = new Mock<IConfiguration>();
         _loggerMock = new Mock<ILogger<CurrencyConversionService>>();
@@ -58,6 +59,7 @@ public class CurrencyConversionServiceTests : IDisposable
     public void Dispose()
     {
         _appDbContext.Dispose();
+        AppDbContextDatabaseFixture.Cleanup();
     }
 
     public async Task CurrencyConversionService_ConversedValues()
